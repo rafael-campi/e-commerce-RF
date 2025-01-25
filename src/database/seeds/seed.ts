@@ -4,7 +4,7 @@ import { SeederModule } from './seeder.module'; // Ajuste o caminho conforme nec
 import  CreateUsers  from './user.seeder'; // Ajuste o caminho conforme necessário
 
 async function bootstrap() {
-  const app = await NestFactory.create(SeederModule);
+  /*const app = await NestFactory.create(SeederModule);
 
   const userSeeder = app.get(CreateUsers); // Injetando o seeder
   
@@ -13,9 +13,9 @@ async function bootstrap() {
     console.log('Seeding completed successfully');
   } catch (error) {
     console.error('Seeding failed', error);
-  }
+  }*/
 
-  await app.close(); // Fechando a aplicação após o seeding
+  //await app.close(); // Fechando a aplicação após o seeding
 }
 
 bootstrap();
