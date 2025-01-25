@@ -11,6 +11,12 @@ import { CartModule } from './cart/cart.module';
 import { PaymentsModule } from './payments/payments.module';
 import { OrdersModule } from './orders/orders.module';
 import { OrderItemsModule } from './order-items/order-items.module';
+import { CartItemsModule } from './cart-items/cart-items.module';
+import { CartEntity } from './cart/entities/cart.entity';
+import { CartItemEntity } from './cart-items/entities/card-items.entity';
+import { PaymentEntity } from './payments/entities/payment.entity';
+import { OrderEntity } from './orders/entities/order.entity';
+import { OrderItemEntity } from './order-items/entities/order-item.entity';
 
 @Module({
   imports: [
@@ -24,7 +30,7 @@ import { OrderItemsModule } from './order-items/order-items.module';
       username: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [UserEntity,ProductEntity],  // Coloque suas entidades aqui
+      entities: [UserEntity,ProductEntity, CartEntity, CartItemEntity, PaymentEntity, OrderEntity, OrderItemEntity],  // Coloque suas entidades aqui
       synchronize: true,  // Ativa a sincronização (Cuidado em produção!)
       logging: true,  // Ativa o log de consultas SQL
       migrations: ['./src/database/migrations/*.ts'], // Caminho para as migrações
@@ -34,7 +40,8 @@ import { OrderItemsModule } from './order-items/order-items.module';
     CartModule,
     PaymentsModule,
     OrdersModule,
-    OrderItemsModule
+    OrderItemsModule,
+    CartItemsModule
 ],
   controllers: [AppController],
   providers: [AppService],

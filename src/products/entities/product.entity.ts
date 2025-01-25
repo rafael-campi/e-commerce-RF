@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { OrderItemEntity } from 'src/order-items/entities/order-item.entity';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 
 @Entity('products')
 export class ProductEntity { 
@@ -24,4 +25,8 @@ export class ProductEntity {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+
+  @OneToMany(() => OrderItemEntity, (orderItem) => orderItem.product, { onDelete: 'CASCADE' })
+  orderItems: OrderItemEntity[];
 }

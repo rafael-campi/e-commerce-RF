@@ -1,6 +1,9 @@
 import { CartEntity } from 'src/cart/entities/cart.entity';
 import { Role } from '../../enums/role.enum';
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { PaymentEntity } from 'src/payments/entities/payment.entity';
+import { OrderEntity } from 'src/orders/entities/order.entity';
+import { OrderItemEntity } from 'src/order-items/entities/order-item.entity';
 
 @Entity('users')
 export class UserEntity { 
@@ -34,4 +37,13 @@ export class UserEntity {
 
   @OneToMany(() => CartEntity, (cart) => cart.user)
   carts: CartEntity[];
+
+  @OneToMany(() => PaymentEntity, (payment) => payment.user)
+  payments: PaymentEntity[];
+
+  @OneToMany(() => OrderEntity, (order) => order.user, { onDelete: 'CASCADE' })
+  orders: OrderEntity[];
+
+  @OneToMany(() => OrderItemEntity, (orderItem) => orderItem.user, { onDelete: 'CASCADE' })
+  orderItems: OrderItemEntity[];
 }
