@@ -1,0 +1,10 @@
+FROM postgres:latest
+
+# Configure o timezone, caso necessário
+ENV TZ=Etc/UTC
+
+# Copiar scripts de inicialização, se aplicável
+# COPY ./init-scripts /docker-entrypoint-initdb.d/
+
+# Expor a porta padrão do PostgreSQL
+EXPOSE 5432

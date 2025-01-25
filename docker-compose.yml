@@ -22,6 +22,7 @@ services:
     volumes:
       - .docker/dbdata:/var/lib/postgresql/data
     environment:
+      - POSTGRES_USER=docker
       - POSTGRES_PASSWORD=docker
       - POSTGRES_DB=cursonestjs
   
@@ -35,5 +36,6 @@ services:
     volumes:
       - .docker/dbdatatest:/var/lib/postgresql/data
     environment:
+      - POSTGRES_USER=docker
       - POSTGRES_PASSWORD=docker
       - POSTGRES_DB=testdb

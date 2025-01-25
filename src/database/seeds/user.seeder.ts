@@ -1,43 +1,19 @@
-/* import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { UserEntity } from 'src/users/entities/user.entity';
-import * as bcrypt from 'bcrypt';
+import { Factory, Seeder } from 'typeorm-seeding';
+import { Connection } from 'typeorm';
+import { UserEntity } from '../../users/entities/user.entity';
+import { Role } from '../../enums/role.enum';
 
-@Injectable()
-export class UserSeeder {
-  constructor(
-    @InjectRepository(UserEntity)
-  ) {}
-
-  async seed() {
-    // Clear existing users (optional)
-    /* await this.userRepository.clear();
-
-    // Seed users
-    const users = [
-      {
-        email: 'admin@example.com',
-        password: await this.hashPassword('admin123'),
-        firstName: 'Admin',
-        lastName: 'User'
-      },
-      {
-        email: 'user@example.com',
-        password: await this.hashPassword('user123'),
-        firstName: 'Regular',
-        lastName: 'User'
-      }
-    ];
-
-    // Save users
-    await this.userRepository.save(users);
-    console.log('Users seeded successfully');
+export default class CreateUsers implements Seeder {
+  public async run(factory: Factory, connection: Connection): Promise<void> {
+    await connection
+      .createQueryBuilder()
+      .insert()
+      .into(UserEntity)
+      .values([
+        { firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com', password: 'password123', role: Role.ADMIN },
+        { firstName: 'Jane', lastName: 'Doe', email: 'jane.doe@example.com', password: 'password123', role: Role.USER },
+        { firstName: 'Jim', lastName: 'Beam', email: 'jim.beam@example.com', password: 'password123', role: Role.USER },
+      ])
+      .execute();
   }
-
-  private async hashPassword(password: string): Promise<string> {
-    const salt = await bcrypt.genSalt(10);
-    return bcrypt.hash(password, salt);
-  } 
-  }
-} */
+}
