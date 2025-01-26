@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { CartEntity } from './entities/cart.entity';
 import { Repository } from 'typeorm';
 import { CreateCartDto } from './dto/create-cart.dto';
-import { ProductEntity } from 'src/products/entities/product.entity';
+import { ProductEntity } from '../products/entities/product.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ProductsService } from 'src/products/products.service';
-import { UserService } from 'src/users/users.service';
+import { ProductsService } from '../products/products.service';
+import { UserService } from '../users/users.service';
 
 @Injectable()
 export class CartService {

@@ -1,5 +1,5 @@
-import { CartEntity } from "src/cart/entities/cart.entity";
-import { UserEntity } from "src/users/entities/user.entity";
+import { CartEntity } from "../../cart/entities/cart.entity";
+import { UserEntity } from "../../users/entities/user.entity";
 import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity('card_items')

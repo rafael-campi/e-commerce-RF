@@ -17,6 +17,7 @@ import { CartItemEntity } from './cart-items/entities/card-items.entity';
 import { PaymentEntity } from './payments/entities/payment.entity';
 import { OrderEntity } from './orders/entities/order.entity';
 import { OrderItemEntity } from './order-items/entities/order-item.entity';
+import { DataSource } from 'typeorm';
 
 @Module({
   imports: [
@@ -46,4 +47,5 @@ import { OrderItemEntity } from './order-items/entities/order-item.entity';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule {
+}

@@ -1,5 +1,5 @@
-import { PaymentEntity } from 'src/payments/entities/payment.entity';
-import { UserEntity } from 'src/users/entities/user.entity';
+import { PaymentEntity } from '../../payments/entities/payment.entity';
+import { UserEntity } from '../../users/entities/user.entity';
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
 
 @Entity('orders')
