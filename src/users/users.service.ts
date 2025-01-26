@@ -49,6 +49,13 @@ export class UserService {
     });
   }
 
+  async findByEmail(searchEmail: string) {
+
+    return this.usersRepository.findOneBy({
+      email: searchEmail,
+    });
+  }
+
   async update(
     id: number,
     { email, firstName,lastName, password, role }: UpdateUserDto,
