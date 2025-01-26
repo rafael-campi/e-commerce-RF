@@ -1,41 +1,42 @@
 version: "3.9"
 
 services:
-  app:
-    build: .
-    entrypoint: .docker/entrypoint.sh
-    container_name: cursonestjs-app
-    ports:
-      - "3001:3000"
-    volumes:
-      - .:/home/node/app
-    depends_on:
-      - db
+  #app:
+  #  build: .
+  #  entrypoint: .docker/entrypoint.sh
+  #  container_name: cursonestjs-app
+  #  ports:
+  #    - "3001:3000"
+  #  volumes:
+  #    - .:/home/node/app
+  #  depends_on:
+  #    - db
 
   db:
     build: .docker/postgres
-    container_name: cursonestjs-db
+    container_name: ecommerce-rf
     restart: always
     tty: true
     ports:
       - "5432:5432"
     volumes:
       - .docker/dbdata:/var/lib/postgresql/data
+      - .scripts/docker/postgres:/docker-entrypoint-initdb.d/
     environment:
       - POSTGRES_USER=docker
       - POSTGRES_PASSWORD=docker
-      - POSTGRES_DB=cursonestjs
+      - POSTGRES_DB=ecommerce
   
-  dbtest:
-    build: .docker/postgres
-    container_name: cursonestjs-dbtest
-    restart: always
-    tty: true
-    ports:
-      - "5433:5432"
-    volumes:
-      - .docker/dbdatatest:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_USER=docker
-      - POSTGRES_PASSWORD=docker
-      - POSTGRES_DB=testdb
+  #dbtest:
+  #  build: .docker/postgres
+  #  container_name: ecommerce-dbtest
+  #  restart: always
+  #  tty: true
+  #  ports:
+  #    - "5433:5432"
+  #  volumes:
+  #    - .docker/dbdatatest:/var/lib/postgresql/data
+  #  environment:
+  #    - POSTGRES_USER=docker
+  #    - POSTGRES_PASSWORD=docker
+  #    - POSTGRES_DB=testdb
