@@ -18,6 +18,7 @@ import { PaymentEntity } from './payments/entities/payment.entity';
 import { OrderEntity } from './orders/entities/order.entity';
 import { OrderItemEntity } from './order-items/entities/order-item.entity';
 import { DataSource } from 'typeorm';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -42,7 +43,8 @@ import { DataSource } from 'typeorm';
     PaymentsModule,
     OrdersModule,
     OrderItemsModule,
-    CartItemsModule
+    CartItemsModule,
+    AuthModule
 ],
   controllers: [AppController],
   providers: [AppService],
