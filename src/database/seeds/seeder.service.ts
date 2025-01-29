@@ -35,7 +35,7 @@ export class SeederService {
     const salt = await bcrypt.genSalt(10);
     for (const user of users) {
       user.password = await bcrypt.hash(user.password, salt);
-      await this.userService.create(user);  // Criar o usuário
+      await this.userService.create(user); // Criar o usuário
     }
 
     console.log('User seeding completed');

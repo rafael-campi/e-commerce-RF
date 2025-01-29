@@ -7,9 +7,7 @@ import { ProductEntity } from './entities/product.entity';
 import { ProductExists } from './validator/product.validator';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([ProductEntity]),
-  ],
+  imports: [TypeOrmModule.forFeature([ProductEntity])],
   controllers: [ProductsController],
   providers: [ProductsService, ProductExists],
   exports: [ProductsService],

@@ -1,10 +1,17 @@
 import { OrderItemEntity } from '../../order-items/entities/order-item.entity';
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
 
 @Entity('products')
-export class ProductEntity { 
+export class ProductEntity {
   @PrimaryGeneratedColumn({
-    unsigned:true
+    unsigned: true,
   })
   id: number;
 
@@ -26,7 +33,8 @@ export class ProductEntity {
   @UpdateDateColumn()
   updatedAt: Date;
 
-
-  @OneToMany(() => OrderItemEntity, (orderItem) => orderItem.product, { onDelete: 'CASCADE' })
+  @OneToMany(() => OrderItemEntity, (orderItem) => orderItem.product, {
+    onDelete: 'CASCADE',
+  })
   orderItems: OrderItemEntity[];
 }

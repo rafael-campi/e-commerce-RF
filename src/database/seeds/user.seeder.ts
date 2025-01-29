@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { UserService } from '../../users/users.service';  // Ajuste o caminho
+import { UserService } from '../../users/users.service'; // Ajuste o caminho
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -7,7 +7,7 @@ export class CreateUsers {
   constructor(private readonly userService: UserService) {}
 
   async run() {
-    const existingUsers = await this.userService.findAll();  // Ou outro método que você tenha no UserService
+    const existingUsers = await this.userService.findAll(); // Ou outro método que você tenha no UserService
     if (existingUsers.length > 0) {
       console.log('Users already seeded');
       return;
@@ -32,7 +32,7 @@ export class CreateUsers {
     ];
 
     for (const user of users) {
-      await this.userService.create(user);  // Usando o UserService para criar os usuários
+      await this.userService.create(user); // Usando o UserService para criar os usuários
     }
 
     console.log('User seeding completed');

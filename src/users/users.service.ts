@@ -50,7 +50,6 @@ export class UserService {
   }
 
   async findByEmail(searchEmail: string) {
-
     return this.usersRepository.findOneBy({
       email: searchEmail,
     });
@@ -58,7 +57,7 @@ export class UserService {
 
   async update(
     id: number,
-    { email, firstName,lastName, password, role }: UpdateUserDto,
+    { email, firstName, lastName, password, role }: UpdateUserDto,
   ) {
     await this.exists(id);
 
@@ -84,8 +83,6 @@ export class UserService {
     await this.exists(id);
 
     const data: any = {};
-
-  
 
     if (email) {
       data.email = email;

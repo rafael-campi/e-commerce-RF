@@ -12,9 +12,9 @@ import { ProductEntity } from '../products/entities/product.entity';
 
 @Module({
   imports: [
-      TypeOrmModule.forFeature([CartEntity,UserEntity, ProductEntity]),
-      UsersModule, 
-      ProductsModule, 
+    TypeOrmModule.forFeature([CartEntity, UserEntity, ProductEntity]),
+    UsersModule,
+    ProductsModule,
   ],
 
   controllers: [CartController],

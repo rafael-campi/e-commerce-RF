@@ -23,18 +23,26 @@ import { AuthModule } from './auth/auth.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal:true,
+      isGlobal: true,
     }),
     TypeOrmModule.forRoot({
-      type: 'postgres',  // O tipo do banco de dados
+      type: 'postgres', // O tipo do banco de dados
       host: process.env.DB_HOST,
       port: parseInt(process.env.DB_PORT, 10),
       username: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [UserEntity,ProductEntity, CartEntity, CartItemEntity, PaymentEntity, OrderEntity, OrderItemEntity],  // Coloque suas entidades aqui
-      synchronize: true,  // Ativa a sincronização (Cuidado em produção!)
-      logging: true,  // Ativa o log de consultas SQL
+      entities: [
+        UserEntity,
+        ProductEntity,
+        CartEntity,
+        CartItemEntity,
+        PaymentEntity,
+        OrderEntity,
+        OrderItemEntity,
+      ], // Coloque suas entidades aqui
+      synchronize: true, // Ativa a sincronização (Cuidado em produção!)
+      logging: true, // Ativa o log de consultas SQL
       migrations: ['./src/database/migrations/*.ts'], // Caminho para as migrações
     }),
     UsersModule,
@@ -44,10 +52,9 @@ import { AuthModule } from './auth/auth.module';
     OrdersModule,
     OrderItemsModule,
     CartItemsModule,
-    AuthModule
-],
+    AuthModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {
-}
+export class AppModule {}

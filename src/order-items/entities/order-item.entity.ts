@@ -1,11 +1,18 @@
 import { ProductEntity } from '../../products/entities/product.entity';
 import { UserEntity } from '../../users/entities/user.entity';
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+} from 'typeorm';
 
 @Entity('order-items')
-export class OrderItemEntity { 
+export class OrderItemEntity {
   @PrimaryGeneratedColumn({
-    unsigned:true
+    unsigned: true,
   })
   id: number;
 
@@ -27,10 +34,13 @@ export class OrderItemEntity {
   @UpdateDateColumn()
   updatedAt: Date;
 
-
-  @ManyToOne(() => UserEntity, (user) => user.orderItems, { onDelete: 'CASCADE' })
+  @ManyToOne(() => UserEntity, (user) => user.orderItems, {
+    onDelete: 'CASCADE',
+  })
   user: UserEntity;
-  
-  @ManyToOne(() => ProductEntity, (product) => product.orderItems, { onDelete: 'CASCADE' })
+
+  @ManyToOne(() => ProductEntity, (product) => product.orderItems, {
+    onDelete: 'CASCADE',
+  })
   product: ProductEntity;
 }

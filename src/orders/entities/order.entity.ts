@@ -1,11 +1,18 @@
 import { PaymentEntity } from '../../payments/entities/payment.entity';
 import { UserEntity } from '../../users/entities/user.entity';
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+} from 'typeorm';
 
 @Entity('orders')
-export class OrderEntity { 
+export class OrderEntity {
   @PrimaryGeneratedColumn({
-    unsigned:true
+    unsigned: true,
   })
   id: number;
 
@@ -21,7 +28,8 @@ export class OrderEntity {
   @ManyToOne(() => UserEntity, (user) => user.orders, { onDelete: 'CASCADE' })
   user: UserEntity;
 
-  @ManyToOne(() => PaymentEntity, (payment) => payment.orders, { onDelete: 'CASCADE' })
+  @ManyToOne(() => PaymentEntity, (payment) => payment.orders, {
+    onDelete: 'CASCADE',
+  })
   payment: PaymentEntity;
-  
 }

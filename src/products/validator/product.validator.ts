@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { ValidatorConstraint, ValidatorConstraintInterface } from 'class-validator';
+import {
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+} from 'class-validator';
 import { ValidationArguments } from 'class-validator';
 import { ProductsService } from '../products.service';
 
@@ -10,7 +13,7 @@ export class ProductExists implements ValidatorConstraintInterface {
 
   async validate(productId: number, args: ValidationArguments) {
     const product = await this.productService.find(productId);
-    return !!product; 
+    return !!product;
   }
 
   defaultMessage(args: ValidationArguments) {

@@ -1,11 +1,18 @@
-import { CartEntity } from "../../cart/entities/cart.entity";
-import { UserEntity } from "../../users/entities/user.entity";
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { CartEntity } from '../../cart/entities/cart.entity';
+import { UserEntity } from '../../users/entities/user.entity';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('card_items')
 export class CartItemEntity {
-    @PrimaryGeneratedColumn({
-    unsigned:true
+  @PrimaryGeneratedColumn({
+    unsigned: true,
   })
   id: number;
 
@@ -14,7 +21,6 @@ export class CartItemEntity {
 
   @Column({ nullable: false })
   quantity: number;
-  
 
   @CreateDateColumn()
   createdAt: Date;

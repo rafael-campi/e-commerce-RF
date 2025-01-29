@@ -6,8 +6,7 @@ import { UserEntity } from './entities/user.entity';
 
 @Module({
   imports: [
-    // Importando o TypeOrmModule com a entidade UserEntity
-    TypeOrmModule.forFeature([UserEntity]), // Isso é essencial para injetar o repositório
+    TypeOrmModule.forFeature([UserEntity]),
   ],
   providers: [UserService],
   controllers: [UsersController],
