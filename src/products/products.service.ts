@@ -14,8 +14,6 @@ export class ProductsService {
 
     async create(data: CreateProductDto) {
         
-    
-    
         const user = this.productRepository.create(data);
     
         return this.productRepository.save(user);

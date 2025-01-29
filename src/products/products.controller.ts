@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Headers, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -15,7 +15,7 @@ export class ProductsController {
         }
       
         @Get()
-        findAll() {
+        findAll(@Request() req) {
           return this.productService.findAll();
         }
       
