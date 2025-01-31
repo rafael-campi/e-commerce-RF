@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
+  Headers,
   Param,
   Post,
   UseGuards,
@@ -15,9 +17,15 @@ import { AuthGuard } from '@nestjs/passport';
 export class CartController {
   constructor(private readonly cartService: CartService) {}
 
+  @Get()
+  findByUser(@Headers() header) {
+    return this.cartService.findByUser(header.user);
+  }
+
+
   @Post()
-  create(@Body() createCartDto: CreateCartDto) {
-    return this.cartService.create(createCartDto);
+  create(@Headers() header, @Body() createCartDto: CreateCartDto) {
+    return this.cartService.create(createCartDto, header.user);
   }
 
   @Delete(':id')

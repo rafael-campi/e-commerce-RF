@@ -1,3 +1,4 @@
+import { ProductEntity } from 'src/products/entities/product.entity';
 import { CartEntity } from '../../cart/entities/cart.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 import {
@@ -19,8 +20,9 @@ export class CartItemEntity {
   @ManyToOne(() => CartEntity, (cart) => cart.cartItem, { onDelete: 'CASCADE' })
   cart: CartEntity;
 
-  @Column({ nullable: false })
-  quantity: number;
+  @ManyToOne(() => ProductEntity, (product) => product.cartItems, { eager: true })
+  product: ProductEntity;
+
 
   @CreateDateColumn()
   createdAt: Date;

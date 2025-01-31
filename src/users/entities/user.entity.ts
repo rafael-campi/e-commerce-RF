@@ -9,8 +9,6 @@ import {
   OneToMany,
 } from 'typeorm';
 import { PaymentEntity } from '../../payments/entities/payment.entity';
-import { OrderEntity } from '../../orders/entities/order.entity';
-import { OrderItemEntity } from '../../order-items/entities/order-item.entity';
 
 @Entity('users')
 export class UserEntity {
@@ -48,11 +46,4 @@ export class UserEntity {
   @OneToMany(() => PaymentEntity, (payment) => payment.user)
   payments: PaymentEntity[];
 
-  @OneToMany(() => OrderEntity, (order) => order.user, { onDelete: 'CASCADE' })
-  orders: OrderEntity[];
-
-  @OneToMany(() => OrderItemEntity, (orderItem) => orderItem.user, {
-    onDelete: 'CASCADE',
-  })
-  orderItems: OrderItemEntity[];
 }

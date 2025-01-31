@@ -6,32 +6,38 @@ import { ProductEntity } from '../products/entities/product.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProductsService } from '../products/products.service';
 import { UserService } from '../users/users.service';
+import { UserEntity } from 'src/users/entities/user.entity';
+import { CartItemsService } from 'src/cart-items/cart-items.service';
 
 @Injectable()
 export class CartService {
   constructor(
     @InjectRepository(CartEntity)
     private cartRepository: Repository<CartEntity>,
-    private userService: UserService,
-    private productService: ProductsService,
+    private cartItemService: CartItemsService
   ) {}
 
-  async create(data: CreateCartDto) {
-    // Find the user by the user_id from the data
-    const user = await this.userService.find(data.user_id);
+  async create(data: CreateCartDto, user: UserEntity) {
 
-    if (!user) {
-      throw new Error('User not found');
-    }
+    
+    const cart = this.cartRepository.create({ user });
 
-    // Create a new cart and associate it with the found user
-    const cart = this.cartRepository.create({
-      user, // Directly associating the user with the cart
-    });
+    // Salvar o carrinho no banco de dados
+    const savedCart = await this.cartRepository.save(cart);
 
-    // Save the cart with the user association
-    return this.cartRepository.save(cart);
+    // Criar os itens do carrinho
+    const cartItems = await this.cartItemService.createMany(data.items, savedCart);
+
+    return { ...savedCart, items: cartItems };
   }
+
+  async findByUser(userSearch: UserEntity) {
+    return this.cartRepository.find({
+      where: { user: userSearch },
+      relations: ['cartItem'],
+    });
+  }
+
 
   async delete(id: number) {
     await this.cartRepository.delete(id);

@@ -1,4 +1,4 @@
-import { OrderItemEntity } from '../../order-items/entities/order-item.entity';
+import { CartItemEntity } from 'src/cart-items/entities/card-items.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -33,8 +33,9 @@ export class ProductEntity {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany(() => OrderItemEntity, (orderItem) => orderItem.product, {
-    onDelete: 'CASCADE',
-  })
-  orderItems: OrderItemEntity[];
+
+
+  @OneToMany(() => CartItemEntity, (cartItem) => cartItem.product)
+  cartItems: CartItemEntity[];
+
 }

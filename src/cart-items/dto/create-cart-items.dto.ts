@@ -7,11 +7,4 @@ export class CreateCartItemDto {
   @Validate(ProductExists)
   productId: number;
 
-  @IsInt()
-  @IsNotEmpty()
-  quantity: number;
-
-  @IsString()
-  @IsNotEmpty()
-  userId: string;
 }

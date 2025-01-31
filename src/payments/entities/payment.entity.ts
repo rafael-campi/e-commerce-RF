@@ -1,5 +1,5 @@
+import { CartEntity } from 'src/cart/entities/cart.entity';
 import { CartItemEntity } from '../../cart-items/entities/card-items.entity';
-import { OrderEntity } from '../../orders/entities/order.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 import {
   Column,
@@ -34,10 +34,10 @@ export class PaymentEntity {
   })
   cartItem: CartItemEntity[];
 
-  @OneToMany(() => OrderEntity, (order) => order.payment, {
+  @OneToMany(() => CartEntity, (cart) => cart.payment, {
     onDelete: 'CASCADE',
   })
-  orders: OrderEntity[];
+  carts: CartEntity[];
 
   @CreateDateColumn()
   createdAt: Date;

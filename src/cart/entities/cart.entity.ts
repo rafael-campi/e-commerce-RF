@@ -1,3 +1,4 @@
+import { PaymentEntity } from 'src/payments/entities/payment.entity';
 import { CartItemEntity } from '../../cart-items/entities/card-items.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 import {
@@ -23,4 +24,9 @@ export class CartEntity {
 
   @OneToMany(() => CartItemEntity, (cartItem) => cartItem.cart)
   cartItem: CartItemEntity[];
+
+   @ManyToOne(() => PaymentEntity, (payment) => payment.carts, {
+      onDelete: 'CASCADE',
+    })
+    payment: PaymentEntity;
 }
