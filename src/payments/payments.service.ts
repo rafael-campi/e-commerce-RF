@@ -5,7 +5,7 @@ import { PaymentEntity } from './entities/payment.entity';
 import { UserService } from 'src/users/users.service';
 import { UserEntity } from 'src/users/entities/user.entity';
 import { CartService } from 'src/cart/cart.service';
-
+ import { PaymentStatus } from 'src/enums/payment.enums';
 @Injectable()
 export class PaymentsService {
     constructor(
@@ -24,16 +24,14 @@ export class PaymentsService {
         }
 
         const amount = cart.cartItem.reduce((sum, item) => {
-          const productPrice = Number(item.product.price) || 0; // Evita erro se product for undefined
-          return sum + productPrice; // Considera a quantidade do item
+          const productPrice = Number(item.product.price) || 0;
+          return sum + productPrice; 
         }, 0) || 0;
 
-        //const amount = 
-        console.log("CART: ", amount);
         const payment =  this.paymentRepository.create({
           amount: String(amount),
           payment_method: paymentMethod,
-          payment_status:'progress',
+          payment_status: PaymentStatus.PROGRESS,
           user: user
         });
 
