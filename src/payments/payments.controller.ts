@@ -13,7 +13,7 @@ export class PaymentsController {
 
     @Post()
     create(@Headers() header, @Body() body: CreatePaymentDto){
-        return this.paymentService.createPayment(body.payment_method, body.cartId, header.user);
+        return this.paymentService.createPayment(body.paymentMethod, body.cartId, header.user);
     }
     
 }

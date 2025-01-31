@@ -4,7 +4,7 @@ export class CreatePaymentDto{
 
     @IsString()
     @IsNotEmpty()
-    payment_method: string;
+    paymentMethod: string;
 
 
     cartId: number;
