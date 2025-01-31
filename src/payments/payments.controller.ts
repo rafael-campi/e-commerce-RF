@@ -1,4 +1,19 @@
-import { Controller } from '@nestjs/common';
+import { Body, Controller, Headers, Post, UseGuards } from '@nestjs/common';
+import { PaymentsService } from './payments.service';
+import { CreatePaymentDto } from './dto/create-payments.dto';
+import { AuthGuard } from '@nestjs/passport';
 
-@Controller('payments')
-export class PaymentsController {}
+@UseGuards(AuthGuard('jwt'))
+@Controller('payment')
+export class PaymentsController {
+
+    constructor(
+        private readonly paymentService: PaymentsService
+    ){}
+
+    @Post()
+    create(@Headers() header, @Body() body: CreatePaymentDto){
+        return this.paymentService.createPayment(body.payment_method, body.cartId, header.user);
+    }
+    
+}

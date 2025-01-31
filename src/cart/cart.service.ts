@@ -38,6 +38,13 @@ export class CartService {
     });
   }
 
+  async find(id: number) {
+    return this.cartRepository.findOne({
+      where: { id },
+      relations: ['cartItem', 'cartItem.product'],
+    });
+  }
+
 
   async delete(id: number) {
     await this.cartRepository.delete(id);
