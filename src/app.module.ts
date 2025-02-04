@@ -15,29 +15,21 @@ import { CartItemEntity } from './cart-items/entities/card-items.entity';
 import { PaymentEntity } from './payments/entities/payment.entity';
 import { DataSource } from 'typeorm';
 import { AuthModule } from './auth/auth.module';
+import { AppDataSource } from './database/data-source';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '.env',
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT, 10),
-      username: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      entities: [
-        UserEntity,
-        ProductEntity,
-        CartEntity,
-        CartItemEntity,
-        PaymentEntity,
-      ],
-      synchronize: true,
-      logging: true,
-      migrations: ['./src/database/migrations/*.ts'],
+    TypeOrmModule.forRootAsync({
+      useFactory: () => ({
+        ...AppDataSource.options,
+        autoLoadEntities: true,
+      }),
     }),
     UsersModule,
     ProductsModule,
@@ -47,6 +39,8 @@ import { AuthModule } from './auth/auth.module';
     AuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService
+  ],
 })
 export class AppModule {}

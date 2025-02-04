@@ -12,6 +12,7 @@ import { UserService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { UserType } from 'src/enums/user-types.enum';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('users')

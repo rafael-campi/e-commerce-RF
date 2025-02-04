@@ -26,9 +26,6 @@ export class PaymentEntity {
   @Column()
   payment_status: string;
 
-  @ManyToOne(() => UserEntity, (user) => user.payments, { onDelete: 'CASCADE' })
-  user: UserEntity;
-
   @OneToMany(() => CartItemEntity, (cartItem) => cartItem.cart, {
     onDelete: 'CASCADE',
   })

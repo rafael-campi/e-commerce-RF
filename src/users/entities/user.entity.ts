@@ -1,5 +1,5 @@
 import { CartEntity } from '../../cart/entities/cart.entity';
-import { Role } from '../../enums/role.enum';
+import { UserType } from '../../enums/user-types.enum';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -36,14 +36,11 @@ export class UserEntity {
   updatedAt: Date;
 
   @Column({
-    default: Role.USER,
+    default: UserType.USER,
   })
   role: number;
 
   @OneToMany(() => CartEntity, (cart) => cart.user)
   carts: CartEntity[];
-
-  @OneToMany(() => PaymentEntity, (payment) => payment.user)
-  payments: PaymentEntity[];
 
 }

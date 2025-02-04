@@ -32,7 +32,6 @@ export class PaymentsService {
           amount: String(amount),
           payment_method: paymentMethod,
           payment_status: PaymentStatus.PROGRESS,
-          user: user
         });
 
         const savedCart = await this.paymentRepository.save(payment);
