@@ -18,6 +18,7 @@ import { AuthModule } from './auth/auth.module';
 import { AppDataSource } from './database/data-source';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
+import { UserTypesGuard } from './guards/auth.guard';
 
 @Module({
   imports: [
@@ -31,6 +32,11 @@ import { JwtModule } from '@nestjs/jwt';
         autoLoadEntities: true,
       }),
     }),
+    JwtModule.register({
+      global: true,
+      secret: process.env.SECRET_KEY_JWT,
+      signOptions: { expiresIn: '1d' },
+    }),
     UsersModule,
     ProductsModule,
     CartModule,
@@ -40,7 +46,11 @@ import { JwtModule } from '@nestjs/jwt';
   ],
   controllers: [AppController],
   providers: [
-    AppService
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: UserTypesGuard,
+    },
   ],
 })
 export class AppModule {}

@@ -6,15 +6,13 @@ import {
   Patch,
   Param,
   Delete,
-  UseGuards,
 } from '@nestjs/common';
 import { UserService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { AuthGuard } from '@nestjs/passport';
 import { UserType } from 'src/enums/user-types.enum';
+import { Roles } from '../decorators/roles.decorator';
 
-@UseGuards(AuthGuard('jwt'))
 @Controller('users')
 export class UsersController {
   constructor(private readonly userService: UserService) {}
@@ -25,21 +23,25 @@ export class UsersController {
   }
 
   @Get()
+  @Roles(UserType.ADMIN)
   findAll() {
     return this.userService.findAll();
   }
 
   @Get(':id')
+  @Roles(UserType.ADMIN, UserType.USER)
   findOne(@Param('id') id: number) {
     return this.userService.find(id);
   }
 
   @Patch(':id')
+  @Roles(UserType.ADMIN)
   update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(id, updateUserDto);
   }
 
   @Delete(':id')
+  @Roles(UserType.ADMIN)
   delete(@Param('id') id: number) {
     return this.userService.delete(id);
   }
