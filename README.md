@@ -31,11 +31,6 @@ Este projeto é uma API backend para um sistema de **E-commerce** desenvolvido u
 - **bcryptjs** - Para criptografia de senhas.
 - **class-validator** - Para validação de dados de entrada.
 
-## Pré-requisitos
-
-- Node.js >= 16.0
-- Banco de dados relacional (MySQL, PostgreSQL, etc.)
-- Conta configurada no **Stripe** ou **PagSeguro** para integração de pagamentos.
 
 ## Instalação
 
@@ -178,7 +173,3 @@ Para rodar testes de integração com banco de dados, é necessário configurar 
 ## Licença
 
 Este projeto é licenciado sob a **MIT License** - veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
----
-
-Esse modelo de README pode ser ajustado conforme as especificações do seu projeto. Certifique-se de configurar corretamente as integrações de pagamento e autenticação de acordo com o provedor escolhido.
