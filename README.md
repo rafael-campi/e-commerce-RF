@@ -1,10 +1,6 @@
-Aqui está um exemplo de README detalhado para um projeto de e-commerce desenvolvido com **NestJS**, incluindo autenticação e formas de pagamento:
-
----
-
 # E-commerce API - NestJS
 
-Este projeto é uma API backend para um sistema de **E-commerce** desenvolvido utilizando **NestJS**, com funcionalidades de **autenticação de usuários** e **integração com métodos de pagamento**. O objetivo é fornecer uma base escalável para a criação de plataformas de comércio eletrônico, implementando padrões de segurança e extensibilidade.
+Este projeto é uma API backend para um sistema de **E-commerce** desenvolvido utilizando **NestJS**, com funcionalidades de **autenticação de usuários** e **integração com métodos de pagamento**.
 
 ## Funcionalidades
 
@@ -178,9 +174,6 @@ npm run test
 
 Para rodar testes de integração com banco de dados, é necessário configurar um banco de dados de teste.
 
-## Contribuições
-
-Contribuições são bem-vindas! Se você encontrar algum erro ou tiver uma sugestão de melhoria, abra uma **issue** ou envie um **pull request**.
 
 ## Licença
 
