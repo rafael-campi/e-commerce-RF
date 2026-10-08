@@ -1,175 +1,98 @@
-# E-commerce API - NestJS
+# E-commerce API (NestJS)
 
-Este projeto é uma API backend para um sistema de **E-commerce** desenvolvido utilizando **NestJS**, com funcionalidades de **autenticação de usuários** e **integração com métodos de pagamento**.
+API backend de um e-commerce: cadastro e login de usuários (JWT), catálogo de produtos, carrinho de compras e pagamento. Desenvolvida com **NestJS**, **TypeScript**, **TypeORM** e **PostgreSQL**, com testes end-to-end.
 
 ## Funcionalidades
 
-- **Autenticação de usuários**:
-  - Registro de usuários.
-  - Login de usuários (JWT - JSON Web Tokens).
-  - Proteção de rotas com autenticação.
-  
-- **Gestão de produtos**:
-  - CRUD (Create, Read, Update, Delete) de produtos.
-  
-- **Carrinho de compras**:
-  - Adicionar, remover e visualizar itens no carrinho.
-  
-- **Integração com gateways de pagamento**:
-  - Pagamento via cartão de crédito.
-  - Pagamento via Pix (exemplo de pagamento instantâneo no Brasil).
-  - Integração com um gateway de pagamento como **Stripe** ou **PagSeguro**.
+- **Autenticação**: login com e-mail e senha, devolvendo um JWT (válido por 1 dia). O cadastro é público (`POST /users`).
+- **Papéis**: `ADMIN` (1), `MODERATOR` (2) e `USER` (3, padrão). Ninguém se cadastra como ADMIN.
+- **Produtos**: qualquer usuário autenticado consulta; só `ADMIN` cria, altera e remove.
+- **Carrinho**: cada usuário cria, lista e remove apenas os próprios carrinhos; itens têm quantidade.
+- **Pagamento**: cobra a soma de preço × quantidade dos itens, via uma interface de gateway (`PaymentGateway`).
 
-## Tecnologias
+> O gateway padrão (`LocalPaymentGateway`) **não cobra de verdade**: apenas gera uma referência. Stripe, PagSeguro ou Pix entram implementando a interface `PaymentGateway`.
 
-- **NestJS** - Framework principal para desenvolvimento backend.
-- **TypeScript** - Linguagem utilizada no projeto.
-- **TypeORM** - ORM para interação com o banco de dados (MySQL/PostgreSQL).
-- **Passport** - Middleware para autenticação.
-- **JWT (JSON Web Tokens)** - Para autenticação e gerenciamento de sessões.
-- **Stripe** ou **PagSeguro** - Integração com métodos de pagamento.
-- **bcryptjs** - Para criptografia de senhas.
-- **class-validator** - Para validação de dados de entrada.
+## Como rodar
 
-
-## Instalação
-
-### 1. Clone o repositório
+Requisitos: Node 20+, Yarn e Docker.
 
 ```bash
-git clone https://github.com/seu-usuario/ecommerce-api-nestjs.git
-cd ecommerce-api-nestjs
+yarn install
+cp .env.example .env        # ajuste SECRET_KEY_JWT
+docker compose up -d db     # Postgres de desenvolvimento (porta 5432)
+yarn start:dev              # http://localhost:3000
 ```
 
-### 2. Instale as dependências
+Variáveis de ambiente (`.env`):
 
-```bash
-npm install
-```
+| Variável | Descrição | Padrão |
+| --- | --- | --- |
+| `PORT` | Porta da API | `3000` |
+| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Conexão com o Postgres | ver `.env.example` |
+| `SECRET_KEY_JWT` | Segredo usado para assinar o JWT | — (obrigatório) |
 
-### 3. Configuração do banco de dados
+Os scripts de migration existem (`yarn migration:generate`, `yarn migration:run`), mas **ainda não há arquivos de migration versionados**; gere-os antes de usar um banco de produção. O seeder (`yarn seed`) cria um admin e um usuário comum.
 
-- Crie um banco de dados no seu SGBD (MySQL ou PostgreSQL).
-- No arquivo `src/config/database.config.ts`, configure as credenciais do banco de dados.
+## Endpoints
 
-### 4. Variáveis de ambiente
+Rotas protegidas exigem o header `Authorization: Bearer <token>`.
 
-Crie um arquivo `.env` na raiz do projeto e adicione as variáveis necessárias:
+### Autenticação
 
-```env
-DATABASE_HOST=localhost
-DATABASE_PORT=5432
-DATABASE_USERNAME=usuario
-DATABASE_PASSWORD=senha
-DATABASE_NAME=ecommerce_db
-JWT_SECRET=seu-segredo-jwt
-STRIPE_SECRET_KEY=sua-chave-secreta-do-stripe
-```
+| Método | Rota | Acesso | Descrição |
+| --- | --- | --- | --- |
+| POST | `/auth/login` | público | Retorna `{ "access_token": "..." }`. Credenciais inválidas: `401`. |
 
-### 5. Rodando o projeto
+### Usuários
 
-Após a configuração, execute o projeto com o seguinte comando:
+| Método | Rota | Acesso | Descrição |
+| --- | --- | --- | --- |
+| POST | `/users` | público | Cadastro. Body: `email`, `password` (mín. 6), `firstName?`, `lastName?`. Papel sempre `USER`. |
+| GET | `/users` | ADMIN | Lista usuários. |
+| GET | `/users/:id` | ADMIN, USER | Busca um usuário. |
+| PATCH | `/users/:id` | ADMIN | Atualiza (inclusive `role`). |
+| DELETE | `/users/:id` | ADMIN | Remove. |
 
-```bash
-npm run start
-```
+Respostas nunca incluem a senha.
 
-A API estará disponível em `http://localhost:3000`.
+### Produtos
 
-## Endpoints da API
+| Método | Rota | Acesso | Descrição |
+| --- | --- | --- | --- |
+| GET | `/products` | autenticado | Lista produtos. |
+| GET | `/products/:id` | autenticado | Busca um produto (`404` se não existir). |
+| POST | `/products` | ADMIN | Cria. Body: `name`, `description`, `price` (≥ 0, até 2 casas), `stock` (inteiro ≥ 0). |
+| PATCH | `/products/:id` | ADMIN | Atualiza campos do produto. |
+| DELETE | `/products/:id` | ADMIN | Remove. |
 
-### 1. Autenticação
+### Carrinho
 
-- **POST /auth/signup** - Registrar um novo usuário.
-  
-  **Request Body**:
-  ```json
-  {
-    "email": "usuario@exemplo.com",
-    "password": "senha123"
-  }
-  ```
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| POST | `/cart` | Cria um carrinho. Body: `{ "items": [{ "productId": 1, "quantity": 2 }] }` (ao menos 1 item, `quantity` inteiro ≥ 1). Produto inexistente: `404`. |
+| GET | `/cart` | Lista os carrinhos do usuário autenticado. |
+| DELETE | `/cart/:id` | Remove um carrinho do próprio usuário (`404` caso contrário). |
 
-- **POST /auth/login** - Login de um usuário.
+### Pagamento
 
-  **Request Body**:
-  ```json
-  {
-    "email": "usuario@exemplo.com",
-    "password": "senha123"
-  }
-  ```
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| POST | `/payment` | Paga um carrinho. Body: `{ "paymentMethod": "pix" \| "credit_card", "cartId": 1 }`. |
 
-  **Response**:
-  ```json
-  {
-    "access_token": "jwt_token_aqui"
-  }
-  ```
-
-### 2. Produtos
-
-- **POST /products** - Adicionar um novo produto.
-  
-  **Request Body**:
-  ```json
-  {
-    "name": "Tênis Nike",
-    "description": "Tênis esportivo de alta performance",
-    "price": 300.00,
-    "stock": 100
-  }
-  ```
-
-- **GET /products** - Listar todos os produtos.
-
-- **GET /products/:id** - Buscar um produto pelo ID.
-
-- **PUT /products/:id** - Atualizar um produto.
-
-- **DELETE /products/:id** - Remover um produto.
-
-### 3. Carrinho
-
-- **POST /cart** - Adicionar um item ao carrinho.
-
-  **Request Body**:
-  ```json
-  {
-    "productId": 1,
-    "quantity": 2
-  }
-  ```
-
-- **GET /cart** - Listar itens no carrinho.
-
-- **DELETE /cart/:id** - Remover item do carrinho.
-
-### 4. Pagamentos
-
-- **POST /payments** - Realizar um pagamento.
-
-  **Request Body**:
-  ```json
-  {
-    "paymentMethod": "stripe",  // ou "pix"
-    "amount": 600.00,
-    "currency": "BRL",
-    "token": "token_do_pagamento_do_stripe"
-  }
-  ```
+Resposta (`201`): `id`, `amount`, `payment_method`, `payment_status` (`progress`), `gatewayReference`, `cartId`, `userId`, `createdAt`.
+Erros: `400` método inválido, `404` carrinho inexistente ou de outro usuário, `409` carrinho já pago, `502` falha do gateway.
 
 ## Testes
 
-Execute os testes unitários e de integração com o seguinte comando:
+A suíte é toda **end-to-end**: sobe a aplicação real e chama a API HTTP (Jest + supertest) contra um Postgres de teste isolado (porta `5434`, em memória), recriado a cada suíte. Só o gateway de pagamento é substituído por um fake.
 
 ```bash
-npm run test
+docker compose up -d dbtest
+yarn test:e2e
 ```
 
-Para rodar testes de integração com banco de dados, é necessário configurar um banco de dados de teste.
+O CI (GitHub Actions) roda o typecheck e os testes a cada push.
 
+## Desenvolvimento orientado a testes
 
-## Licença
-
-Este projeto é licenciado sob a **MIT License** - veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+Cada mudança começa por um teste e2e que falha, depois a implementação mínima. Testes verificam apenas comportamento externo (status, corpo, estado observável), nunca detalhes internos. Veja `CLAUDE.md` e `docs/agents/` para o fluxo de issues.

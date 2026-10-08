@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+
+    services:
+      # mesma porta e credenciais do .env.test
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: docker
+          POSTGRES_PASSWORD: docker
+          POSTGRES_DB: ecommerce_test
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U docker"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - run: npx tsc --noEmit -p tsconfig.json
+      - run: yarn test:e2e
