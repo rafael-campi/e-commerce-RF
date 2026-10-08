@@ -57,3 +57,7 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 ./docker/dbdata
 ./docker/dbdatatest
 ./docker/postgres
+
+# Dados dos bancos Docker
+/.docker/dbdata/
+/.docker/dbdatatest/
