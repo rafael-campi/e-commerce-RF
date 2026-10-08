@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ProductsService } from '../products/products.service';
 import { UserService } from '../users/users.service';
 import { UserEntity } from 'src/users/entities/user.entity';
+import { PaymentEntity } from '../payments/entities/payment.entity';
 import { CartItemsService } from 'src/cart-items/cart-items.service';
 
 @Injectable()
@@ -51,6 +52,17 @@ export class CartService {
     });
   }
 
+
+  async findOwned(id: number, user: UserEntity) {
+    return this.cartRepository.findOne({
+      where: { id, user: { id: user.id } },
+      relations: ['cartItem', 'cartItem.product', 'payment'],
+    });
+  }
+
+  async attachPayment(id: number, payment: PaymentEntity) {
+    await this.cartRepository.update(id, { payment });
+  }
 
   async delete(id: number, user: UserEntity) {
     const cart = await this.cartRepository.findOneBy({

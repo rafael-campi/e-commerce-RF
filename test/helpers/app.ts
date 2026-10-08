@@ -2,12 +2,27 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../../src/app.module';
+import {
+  PAYMENT_GATEWAY,
+  PaymentGateway,
+} from '../../src/payments/gateway/payment-gateway';
 
-export async function createTestApp(): Promise<INestApplication> {
-  const moduleRef = await Test.createTestingModule({
-    imports: [AppModule],
-  }).compile();
+export interface TestAppOptions {
+  paymentGateway?: PaymentGateway;
+}
 
+export async function createTestApp(
+  options: TestAppOptions = {},
+): Promise<INestApplication> {
+  let builder = Test.createTestingModule({ imports: [AppModule] });
+
+  if (options.paymentGateway) {
+    builder = builder
+      .overrideProvider(PAYMENT_GATEWAY)
+      .useValue(options.paymentGateway);
+  }
+
+  const moduleRef = await builder.compile();
   const app = moduleRef.createNestApplication();
   await app.init();
 

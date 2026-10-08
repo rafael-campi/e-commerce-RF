@@ -26,6 +26,12 @@ export class PaymentEntity {
   @Column()
   payment_status: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  gatewayReference: string | null;
+
+  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
+  user: UserEntity;
+
   @OneToMany(() => CartItemEntity, (cartItem) => cartItem.cart, {
     onDelete: 'CASCADE',
   })
