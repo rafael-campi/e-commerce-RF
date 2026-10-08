@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -16,7 +16,7 @@ import { PaymentEntity } from './payments/entities/payment.entity';
 import { DataSource } from 'typeorm';
 import { AuthModule } from './auth/auth.module';
 import { AppDataSource } from './database/data-source';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { UserTypesGuard } from './guards/auth.guard';
 
@@ -50,6 +50,10 @@ import { UserTypesGuard } from './guards/auth.guard';
     {
       provide: APP_GUARD,
       useClass: UserTypesGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ClassSerializerInterceptor,
     },
   ],
 })

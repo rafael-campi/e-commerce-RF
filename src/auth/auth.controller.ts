@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthLoginDTO } from './dto/auth-login.dto';
 
@@ -13,7 +13,7 @@ export class AuthController {
       loginDto.password,
     );
     if (!user) {
-      throw new Error('Invalid credentials');
+      throw new UnauthorizedException('Credenciais inválidas');
     }
     return this.authService.login(user); // Retorna o JWT após o login
   }
