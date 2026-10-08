@@ -1,10 +1,10 @@
-import { IsInt, IsNotEmpty, IsString, Validate } from 'class-validator';
-import { ProductExists } from '../../products/validator/product.validator';
+import { IsInt, Min } from 'class-validator';
 
 export class CreateCartItemDto {
   @IsInt()
-  @IsNotEmpty()
-  @Validate(ProductExists)
   productId: number;
 
+  @IsInt()
+  @Min(1)
+  quantity: number;
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CartEntity } from './entities/cart.entity';
 import { Repository } from 'typeorm';
 import { CreateCartDto } from './dto/create-cart.dto';
@@ -18,22 +18,28 @@ export class CartService {
   ) {}
 
   async create(data: CreateCartDto, user: UserEntity) {
+    // valida todos os produtos antes de persistir, para não deixar carrinho órfão
+    const items = await this.cartItemService.resolveItems(data.items);
 
-    
-    const cart = this.cartRepository.create({ user });
+    const savedCart = await this.cartRepository.save(
+      this.cartRepository.create({ user }),
+    );
+    const cartItems = await this.cartItemService.createMany(items, savedCart);
 
-    // Salvar o carrinho no banco de dados
-    const savedCart = await this.cartRepository.save(cart);
-
-    // Criar os itens do carrinho
-    const cartItems = await this.cartItemService.createMany(data.items, savedCart);
-
-    return { ...savedCart, items: cartItems };
+    return {
+      id: savedCart.id,
+      createdAt: savedCart.createdAt,
+      items: cartItems.map(({ id, quantity, product }) => ({
+        id,
+        quantity,
+        product,
+      })),
+    };
   }
 
-  async findByUser(userSearch: UserEntity) {
+  async findByUser(user: UserEntity) {
     return this.cartRepository.find({
-      where: { user: userSearch },
+      where: { user: { id: user.id } },
       relations: ['cartItem'],
     });
   }
@@ -46,7 +52,16 @@ export class CartService {
   }
 
 
-  async delete(id: number) {
+  async delete(id: number, user: UserEntity) {
+    const cart = await this.cartRepository.findOneBy({
+      id,
+      user: { id: user.id },
+    });
+
+    if (!cart) {
+      throw new NotFoundException(`O carrinho ${id} não existe.`);
+    }
+
     await this.cartRepository.delete(id);
 
     return true;

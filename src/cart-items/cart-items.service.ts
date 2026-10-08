@@ -16,19 +16,31 @@ export class CartItemsService {
     private productService: ProductsService
   ) {}
 
-  async createMany(items: { productId: number; }[], cart: CartEntity) {
-    const cartItems: CartItemEntity[] = [];
+  async resolveItems(items: CreateCartItemDto[]) {
+    const resolved: { product: ProductEntity; quantity: number }[] = [];
 
     for (const item of items) {
       const product = await this.productService.find(item.productId);
+      resolved.push({ product, quantity: item.quantity });
+    }
 
+    return resolved;
+  }
+
+  async createMany(
+    items: { product: ProductEntity; quantity: number }[],
+    cart: CartEntity,
+  ) {
+    const cartItems: CartItemEntity[] = [];
+
+    for (const { product, quantity } of items) {
       const cartItem = this.cartItemRepository.create({
         cart,
         product,
+        quantity,
       });
 
-      const savedCartItem = await this.cartItemRepository.save(cartItem);
-      cartItems.push(savedCartItem);
+      cartItems.push(await this.cartItemRepository.save(cartItem));
     }
 
     return cartItems;
