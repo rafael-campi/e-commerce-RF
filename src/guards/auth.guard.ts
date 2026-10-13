@@ -43,7 +43,7 @@ export class UserTypesGuard implements CanActivate {
         secret: process.env.SECRET_KEY_JWT,
       });
 
-      const user = await this.userService.find(decoded.id);
+      const user = await this.userService.find(decoded.sub);
       
       // Adiciona o usuário ao request para uso posterior
       request.user = user;

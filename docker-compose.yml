@@ -27,16 +27,14 @@ services:
       - POSTGRES_PASSWORD=docker
       - POSTGRES_DB=ecommerce
   
-  #dbtest:
-  #  build: .docker/postgres
-  #  container_name: ecommerce-dbtest
-  #  restart: always
-  #  tty: true
-  #  ports:
-  #    - "5433:5432"
-  #  volumes:
-  #    - .docker/dbdatatest:/var/lib/postgresql/data
-  #  environment:
-  #    - POSTGRES_USER=docker
-  #    - POSTGRES_PASSWORD=docker
-  #    - POSTGRES_DB=testdb
+  dbtest:
+    image: postgres:16-alpine
+    container_name: ecommerce-dbtest
+    ports:
+      - "5434:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=docker
+      - POSTGRES_PASSWORD=docker
+      - POSTGRES_DB=ecommerce_test

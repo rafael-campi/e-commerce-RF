@@ -3,9 +3,10 @@ import {
   Controller,
   Delete,
   Get,
-  Headers,
   Param,
+  ParseIntPipe,
   Post,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 import { CreateCartDto } from './dto/create-cart.dto';
@@ -18,18 +19,17 @@ export class CartController {
   constructor(private readonly cartService: CartService) {}
 
   @Get()
-  findByUser(@Headers() header) {
-    return this.cartService.findByUser(header.user);
+  findByUser(@Request() req) {
+    return this.cartService.findByUser(req.user);
   }
 
-
   @Post()
-  create(@Headers() header, @Body() createCartDto: CreateCartDto) {
-    return this.cartService.create(createCartDto, header.user);
+  create(@Request() req, @Body() createCartDto: CreateCartDto) {
+    return this.cartService.create(createCartDto, req.user);
   }
 
   @Delete(':id')
-  delete(@Param('id') id: number) {
-    return this.cartService.delete(id);
+  delete(@Request() req, @Param('id', ParseIntPipe) id: number) {
+    return this.cartService.delete(id, req.user);
   }
 }

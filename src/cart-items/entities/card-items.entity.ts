@@ -23,6 +23,9 @@ export class CartItemEntity {
   @ManyToOne(() => ProductEntity, (product) => product.cartItems, { eager: true })
   product: ProductEntity;
 
+  @Column({ type: 'int', default: 1 })
+  quantity: number;
+
 
   @CreateDateColumn()
   createdAt: Date;

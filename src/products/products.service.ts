@@ -14,9 +14,14 @@ export class ProductsService {
   ) {}
 
   async create(data: CreateProductDto) {
-    const product = this.productRepository.create(data);
+    const product = this.productRepository.create({
+      ...data,
+      price: String(data.price),
+    });
 
-    return this.productRepository.save(product);
+    const saved = await this.productRepository.save(product);
+
+    return this.find(saved.id);
   }
 
   async findAll() {
@@ -38,7 +43,7 @@ export class ProductsService {
     await this.productRepository.update(id, {
       name,
       description,
-      price,
+      price: price === undefined ? undefined : String(price),
       stock,
     });
 
@@ -54,7 +59,7 @@ export class ProductsService {
     const data: any = {};
     data.name = name;
     data.description = description;
-    data.price = price;
+    data.price = price === undefined ? undefined : String(price);
     data.stock = stock;
 
     await this.productRepository.update(id, data);

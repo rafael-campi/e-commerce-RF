@@ -4,3 +4,8 @@ export enum PaymentStatus {
     FINALIZADO='finished',
 }
   
+
+export enum PaymentMethod {
+  PIX = 'pix',
+  CREDIT_CARD = 'credit_card',
+}

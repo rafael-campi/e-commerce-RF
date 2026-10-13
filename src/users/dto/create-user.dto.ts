@@ -3,10 +3,7 @@ import {
   IsString,
   MinLength,
   IsOptional,
-  IsEnum,
 } from 'class-validator';
-
-import { UserType } from '../../enums/user-types.enum';
 
 export class CreateUserDto {
   @IsEmail()
@@ -23,8 +20,4 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   lastName?: string;
-
-  @IsOptional()
-  @IsEnum(UserType)
-  role?: number;
 }

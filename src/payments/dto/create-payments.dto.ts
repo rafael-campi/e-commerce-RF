@@ -1,12 +1,10 @@
-import { isNotEmpty, IsNotEmpty, isNumber, IsString } from "class-validator";
+import { IsEnum, IsInt } from 'class-validator';
+import { PaymentMethod } from '../../enums/payment.enums';
 
-export class CreatePaymentDto{
+export class CreatePaymentDto {
+  @IsEnum(PaymentMethod)
+  paymentMethod: PaymentMethod;
 
-    @IsString()
-    @IsNotEmpty()
-    paymentMethod: string;
-
-
-    cartId: number;
-
+  @IsInt()
+  cartId: number;
 }
