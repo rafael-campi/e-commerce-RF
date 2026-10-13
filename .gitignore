@@ -61,3 +61,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 # Dados dos bancos Docker
 /.docker/dbdata/
 /.docker/dbdatatest/
+
+# Painel de métricas (gerado)
+/site
