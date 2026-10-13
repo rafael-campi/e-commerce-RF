@@ -136,6 +136,27 @@ describe('Products (e2e)', () => {
     });
   });
 
+  describe('remoção de produto em uso', () => {
+    it('retorna 409 se o produto está em um carrinho e mantém o produto', async () => {
+      const product = await createProduct('Em Carrinho');
+      await http()
+        .post('/cart')
+        .set(bearer(userToken))
+        .send({ items: [{ productId: product.id, quantity: 1 }] })
+        .expect(201);
+
+      await http()
+        .delete(`/products/${product.id}`)
+        .set(bearer(adminToken))
+        .expect(409);
+
+      await http()
+        .get(`/products/${product.id}`)
+        .set(bearer(userToken))
+        .expect(200);
+    });
+  });
+
   describe('nome duplicado', () => {
     it('rejeita criar produto com nome já existente', async () => {
       await createProduct('Duplicado Criação');

@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { ProductEntity } from './entities/product.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
+import { Not, QueryFailedError, Repository } from 'typeorm';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { UserEntity } from 'src/users/entities/user.entity';
@@ -89,7 +89,17 @@ export class ProductsService {
   async delete(id: number) {
     await this.exists(id);
 
-    await this.productRepository.delete(id);
+    try {
+      await this.productRepository.delete(id);
+    } catch (error) {
+      // 23503 = foreign_key_violation: o produto está em algum carrinho
+      if (error instanceof QueryFailedError && error.driverError?.code === '23503') {
+        throw new ConflictException(
+          `O produto ${id} está em carrinhos e não pode ser removido.`,
+        );
+      }
+      throw error;
+    }
 
     return true;
   }
