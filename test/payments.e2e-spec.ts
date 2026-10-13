@@ -114,6 +114,14 @@ describe('Payments (e2e)', () => {
     await pay(token, { paymentMethod: 'pix' }).expect(400);
   });
 
+  it('rejeita cartId fora do intervalo de inteiros', async () => {
+    const { token } = await newCustomer();
+
+    await pay(token, { paymentMethod: 'pix', cartId: 99999999999 }).expect(400);
+
+    expect(gateway.charge).not.toHaveBeenCalled();
+  });
+
   it('retorna 404 para carrinho inexistente', async () => {
     const { token } = await newCustomer();
 
