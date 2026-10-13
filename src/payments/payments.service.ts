@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { PaymentEntity } from './entities/payment.entity';
 import { UserEntity } from '../users/entities/user.entity';
 import { CartService } from '../cart/cart.service';
+import { ProductsService } from '../products/products.service';
 import { PaymentMethod, PaymentStatus } from '../enums/payment.enums';
 import { PAYMENT_GATEWAY, PaymentGateway } from './gateway/payment-gateway';
 
@@ -19,6 +20,7 @@ export class PaymentsService {
     @InjectRepository(PaymentEntity)
     private paymentRepository: Repository<PaymentEntity>,
     private cartService: CartService,
+    private productsService: ProductsService,
     @Inject(PAYMENT_GATEWAY) private gateway: PaymentGateway,
   ) {}
 
@@ -44,6 +46,12 @@ export class PaymentsService {
     );
     const amount = (cents / 100).toFixed(2);
 
+    const reservation = cart.cartItem.map((item) => ({
+      productId: item.product.id,
+      quantity: item.quantity,
+    }));
+    await this.productsService.reserveStock(reservation);
+
     let reference: string;
     try {
       ({ reference } = await this.gateway.charge({
@@ -51,6 +59,7 @@ export class PaymentsService {
         method: paymentMethod,
       }));
     } catch {
+      await this.productsService.releaseStock(reservation);
       throw new BadGatewayException('Falha ao processar o pagamento.');
     }
 

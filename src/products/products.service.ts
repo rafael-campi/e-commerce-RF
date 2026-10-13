@@ -86,6 +86,40 @@ export class ProductsService {
     return this.find(id);
   }
 
+  /**
+   * Reserva o estoque de todos os itens ou de nenhum. Cada baixa é um UPDATE
+   * condicional, então duas compras simultâneas não vendem a mesma unidade.
+   */
+  async reserveStock(items: { productId: number; quantity: number }[]) {
+    const reserved: typeof items = [];
+
+    for (const item of items) {
+      const result = await this.productRepository
+        .createQueryBuilder()
+        .update()
+        .set({ stock: () => 'stock - :quantity' })
+        .where('id = :id AND (stock IS NULL OR stock >= :quantity)', {
+          id: item.productId,
+          quantity: item.quantity,
+        })
+        .execute();
+
+      if (!result.affected) {
+        await this.releaseStock(reserved);
+        throw new ConflictException(
+          `Estoque insuficiente para o produto ${item.productId}.`,
+        );
+      }
+      reserved.push(item);
+    }
+  }
+
+  async releaseStock(items: { productId: number; quantity: number }[]) {
+    for (const { productId, quantity } of items) {
+      await this.productRepository.increment({ id: productId }, 'stock', quantity);
+    }
+  }
+
   async delete(id: number) {
     await this.exists(id);
 

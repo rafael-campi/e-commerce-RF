@@ -5,11 +5,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaymentEntity } from './entities/payment.entity';
 import { CartModule } from 'src/cart/cart.module';
 import { UsersModule } from 'src/users/users.module';
+import { ProductsModule } from 'src/products/products.module';
 import { PAYMENT_GATEWAY } from './gateway/payment-gateway';
 import { LocalPaymentGateway } from './gateway/local-payment-gateway';
 
 @Module({
-  imports:[TypeOrmModule.forFeature([PaymentEntity]), CartModule, UsersModule],
+  imports:[TypeOrmModule.forFeature([PaymentEntity]), CartModule, UsersModule, ProductsModule],
   controllers: [PaymentsController],
   providers: [
     PaymentsService,
