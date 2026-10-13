@@ -134,6 +134,30 @@ describe('Users (e2e)', () => {
         .expect(400);
     });
 
+    it('rejeita papel inválido', async () => {
+      const target = await createUser(app);
+
+      for (const role of ['ADMIN', 99, 0]) {
+        await http()
+          .patch(`/users/${target.id}`)
+          .set(bearer(adminToken))
+          .send({ role })
+          .expect(400);
+      }
+    });
+
+    it('ADMIN altera o papel de um usuário', async () => {
+      const target = await createUser(app);
+
+      const response = await http()
+        .patch(`/users/${target.id}`)
+        .set(bearer(adminToken))
+        .send({ role: UserType.MODERATOR })
+        .expect(200);
+
+      expect(response.body.role).toBe(UserType.MODERATOR);
+    });
+
     it('ADMIN remove um usuário', async () => {
       const target = await createUser(app);
 
