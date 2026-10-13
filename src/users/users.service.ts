@@ -49,6 +49,10 @@ export class UserService {
     });
   }
 
+  async findOptional(id: number) {
+    return this.usersRepository.findOneBy({ id });
+  }
+
   async findByEmail(searchEmail: string) {
     return this.usersRepository.findOneBy({
       email: searchEmail,
