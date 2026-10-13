@@ -65,9 +65,10 @@ export class UserService {
   ) {
     await this.exists(id);
 
-    const salt = await bcrypt.genSalt();
-
-    password = await bcrypt.hash(password, salt);
+    if (password) {
+      const salt = await bcrypt.genSalt();
+      password = await bcrypt.hash(password, salt);
+    }
 
     await this.usersRepository.update(id, {
       email,

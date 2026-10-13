@@ -109,6 +109,20 @@ describe('Users (e2e)', () => {
       await loginAs(app, target.email, 'novasenha123');
     });
 
+    it('ADMIN atualiza só o nome e preserva a senha', async () => {
+      const target = await createUser(app);
+
+      const response = await http()
+        .patch(`/users/${target.id}`)
+        .set(bearer(adminToken))
+        .send({ firstName: 'Joana' })
+        .expect(200);
+
+      expect(response.body.firstName).toBe('Joana');
+      expect(response.body.email).toBe(target.email);
+      await loginAs(app, target.email, target.password);
+    });
+
     it('ADMIN remove um usuário', async () => {
       const target = await createUser(app);
 
