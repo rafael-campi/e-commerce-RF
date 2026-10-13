@@ -1,7 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ProductEntity } from './entities/product.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { UserEntity } from 'src/users/entities/user.entity';
@@ -13,7 +17,20 @@ export class ProductsService {
     private productRepository: Repository<ProductEntity>,
   ) {}
 
+  private async assertNameAvailable(name: string | undefined, exceptId?: number) {
+    if (
+      name !== undefined &&
+      (await this.productRepository.exist({
+        where: exceptId === undefined ? { name } : { name, id: Not(exceptId) },
+      }))
+    ) {
+      throw new ConflictException(`Já existe um produto chamado "${name}".`);
+    }
+  }
+
   async create(data: CreateProductDto) {
+    await this.assertNameAvailable(data.name);
+
     const product = this.productRepository.create({
       ...data,
       price: String(data.price),
@@ -40,6 +57,8 @@ export class ProductsService {
     id: number,
     { name, description, price, stock }: UpdateProductDto,
   ) {
+    await this.assertNameAvailable(name, id);
+
     await this.productRepository.update(id, {
       name,
       description,
