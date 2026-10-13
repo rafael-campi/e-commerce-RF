@@ -136,6 +136,18 @@ describe('Products (e2e)', () => {
     });
   });
 
+  describe('id inválido', () => {
+    it('rejeita id não numérico com 400', async () => {
+      await http().get('/products/abc').set(bearer(adminToken)).expect(400);
+      await http()
+        .patch('/products/abc')
+        .set(bearer(adminToken))
+        .send({ stock: 1 })
+        .expect(400);
+      await http().delete('/products/abc').set(bearer(adminToken)).expect(400);
+    });
+  });
+
   describe('validação', () => {
     const rejects = (body: object) =>
       http().post('/products').set(bearer(adminToken)).send(body).expect(400);

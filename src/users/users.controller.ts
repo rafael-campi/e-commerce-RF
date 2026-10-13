@@ -5,6 +5,7 @@ import {
   Body,
   Patch,
   Param,
+  ParseIntPipe,
   Delete,
   ForbiddenException,
   Request,
@@ -32,8 +33,8 @@ export class UsersController {
 
   @Get(':id')
   @Roles(UserType.ADMIN, UserType.USER)
-  findOne(@Request() req, @Param('id') id: number) {
-    if (req.user.role !== UserType.ADMIN && req.user.id !== Number(id)) {
+  findOne(@Request() req, @Param('id', ParseIntPipe) id: number) {
+    if (req.user.role !== UserType.ADMIN && req.user.id !== id) {
       throw new ForbiddenException('Você só pode consultar o próprio usuário.');
     }
     return this.userService.find(id);
@@ -41,13 +42,13 @@ export class UsersController {
 
   @Patch(':id')
   @Roles(UserType.ADMIN)
-  update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(id, updateUserDto);
   }
 
   @Delete(':id')
   @Roles(UserType.ADMIN)
-  delete(@Param('id') id: number) {
+  delete(@Param('id', ParseIntPipe) id: number) {
     return this.userService.delete(id);
   }
 }

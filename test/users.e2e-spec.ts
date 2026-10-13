@@ -158,6 +158,16 @@ describe('Users (e2e)', () => {
       expect(response.body.role).toBe(UserType.MODERATOR);
     });
 
+    it('rejeita id não numérico com 400', async () => {
+      await http().get('/users/abc').set(bearer(adminToken)).expect(400);
+      await http()
+        .patch('/users/abc')
+        .set(bearer(adminToken))
+        .send({ firstName: 'X' })
+        .expect(400);
+      await http().delete('/users/abc').set(bearer(adminToken)).expect(400);
+    });
+
     it('ADMIN remove um usuário', async () => {
       const target = await createUser(app);
 
