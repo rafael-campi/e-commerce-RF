@@ -123,6 +123,17 @@ describe('Users (e2e)', () => {
       await loginAs(app, target.email, target.password);
     });
 
+    it('rejeita atualizar para um e-mail já usado por outro usuário', async () => {
+      const first = await createUser(app);
+      const second = await createUser(app);
+
+      await http()
+        .patch(`/users/${second.id}`)
+        .set(bearer(adminToken))
+        .send({ email: first.email })
+        .expect(400);
+    });
+
     it('ADMIN remove um usuário', async () => {
       const target = await createUser(app);
 

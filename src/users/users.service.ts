@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -64,6 +64,15 @@ export class UserService {
     { email, firstName, lastName, password, role }: UpdateUserDto,
   ) {
     await this.exists(id);
+
+    if (
+      email &&
+      (await this.usersRepository.exist({
+        where: { email, id: Not(id) },
+      }))
+    ) {
+      throw new BadRequestException('Este e-mail já está sendo usado.');
+    }
 
     if (password) {
       const salt = await bcrypt.genSalt();
