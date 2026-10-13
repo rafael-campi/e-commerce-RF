@@ -49,8 +49,8 @@ Rotas protegidas exigem o header `Authorization: Bearer <token>`.
 | --- | --- | --- | --- |
 | POST | `/users` | público | Cadastro. Body: `email`, `password` (mín. 6), `firstName?`, `lastName?`. Papel sempre `USER`. |
 | GET | `/users` | ADMIN | Lista usuários. |
-| GET | `/users/:id` | ADMIN, USER | Busca um usuário. |
-| PATCH | `/users/:id` | ADMIN | Atualiza (inclusive `role`). |
+| GET | `/users/:id` | ADMIN, USER | Busca um usuário. USER só consulta a si mesmo (`403` para outro). |
+| PATCH | `/users/:id` | ADMIN | Atualização parcial (inclusive `role`: 1, 2 ou 3). E-mail já usado: `400`. |
 | DELETE | `/users/:id` | ADMIN | Remove. |
 
 Respostas nunca incluem a senha.
@@ -61,15 +61,15 @@ Respostas nunca incluem a senha.
 | --- | --- | --- | --- |
 | GET | `/products` | autenticado | Lista produtos. |
 | GET | `/products/:id` | autenticado | Busca um produto (`404` se não existir). |
-| POST | `/products` | ADMIN | Cria. Body: `name`, `description`, `price` (≥ 0, até 2 casas), `stock` (inteiro ≥ 0). |
+| POST | `/products` | ADMIN | Cria. Body: `name` (único: `409` se repetido), `description`, `price` (≥ 0, até 2 casas), `stock` (inteiro ≥ 0). |
 | PATCH | `/products/:id` | ADMIN | Atualiza campos do produto. |
-| DELETE | `/products/:id` | ADMIN | Remove. |
+| DELETE | `/products/:id` | ADMIN | Remove. `409` se o produto está em algum carrinho. |
 
 ### Carrinho
 
 | Método | Rota | Descrição |
 | --- | --- | --- |
-| POST | `/cart` | Cria um carrinho. Body: `{ "items": [{ "productId": 1, "quantity": 2 }] }` (ao menos 1 item, `quantity` inteiro ≥ 1). Produto inexistente: `404`. |
+| POST | `/cart` | Cria um carrinho. Body: `{ "items": [{ "productId": 1, "quantity": 2 }] }` (ao menos 1 item, `quantity` inteiro ≥ 1). Produto inexistente: `404`. Quantidade acima do estoque: `400`. |
 | GET | `/cart` | Lista os carrinhos do usuário autenticado. |
 | DELETE | `/cart/:id` | Remove um carrinho do próprio usuário (`404` caso contrário). |
 
@@ -80,7 +80,7 @@ Respostas nunca incluem a senha.
 | POST | `/payment` | Paga um carrinho. Body: `{ "paymentMethod": "pix" \| "credit_card", "cartId": 1 }`. |
 
 Resposta (`201`): `id`, `amount`, `payment_method`, `payment_status` (`progress`), `gatewayReference`, `cartId`, `userId`, `createdAt`.
-Erros: `400` método inválido, `404` carrinho inexistente ou de outro usuário, `409` carrinho já pago, `502` falha do gateway.
+O pagamento baixa o estoque dos itens. Erros: `400` método ou `cartId` inválido, `404` carrinho inexistente ou de outro usuário, `409` carrinho já pago ou estoque insuficiente, `502` falha do gateway (o estoque é devolvido).
 
 ## Testes
 

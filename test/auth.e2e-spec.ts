@@ -67,6 +67,34 @@ describe('Auth (e2e)', () => {
     await request(app.getHttpServer()).get('/users').expect(401);
   });
 
+  it('token expira em 1 dia', async () => {
+    const user = await createUser(app);
+    const token = await loginAs(app, user.email, user.password);
+
+    const { exp, iat } = JSON.parse(
+      Buffer.from(token.split('.')[1], 'base64').toString(),
+    );
+
+    expect(exp - iat).toBe(24 * 60 * 60);
+  });
+
+  it('token de usuário removido retorna 401', async () => {
+    const admin = await createUser(app, { role: UserType.ADMIN });
+    const adminToken = await loginAs(app, admin.email, admin.password);
+    const user = await createUser(app);
+    const userToken = await loginAs(app, user.email, user.password);
+
+    await request(app.getHttpServer())
+      .delete(`/users/${user.id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .get('/products')
+      .set('Authorization', `Bearer ${userToken}`)
+      .expect(401);
+  });
+
   it('nenhuma resposta expõe senha ou hash', async () => {
     const admin = await createUser(app, { role: UserType.ADMIN });
     const token = await loginAs(app, admin.email, admin.password);

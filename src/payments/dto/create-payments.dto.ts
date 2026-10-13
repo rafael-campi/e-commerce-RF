@@ -1,4 +1,4 @@
-import { IsEnum, IsInt } from 'class-validator';
+import { IsEnum, IsInt, Max, Min } from 'class-validator';
 import { PaymentMethod } from '../../enums/payment.enums';
 
 export class CreatePaymentDto {
@@ -6,5 +6,7 @@ export class CreatePaymentDto {
   paymentMethod: PaymentMethod;
 
   @IsInt()
+  @Min(1)
+  @Max(2147483647)
   cartId: number;
 }
