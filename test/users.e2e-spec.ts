@@ -8,6 +8,8 @@ describe('Users (e2e)', () => {
   let app: INestApplication;
   let adminToken: string;
   let userToken: string;
+  let adminId: number;
+  let userId: number;
 
   const http = () => request(app.getHttpServer());
   const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });
@@ -15,8 +17,10 @@ describe('Users (e2e)', () => {
   beforeAll(async () => {
     app = await createTestApp();
     const admin = await createUser(app, { role: UserType.ADMIN });
+    adminId = admin.id;
     adminToken = await loginAs(app, admin.email, admin.password);
     const user = await createUser(app, { role: UserType.USER });
+    userId = user.id;
     userToken = await loginAs(app, user.email, user.password);
   });
 
@@ -132,6 +136,31 @@ describe('Users (e2e)', () => {
         .delete(`/users/${target.id}`)
         .set(bearer(userToken))
         .expect(403);
+    });
+  });
+
+  describe('GET /users/:id', () => {
+    it('USER consulta a si mesmo', async () => {
+      const response = await http()
+        .get(`/users/${userId}`)
+        .set(bearer(userToken))
+        .expect(200);
+
+      expect(response.body.id).toBe(userId);
+    });
+
+    it('USER não consulta outro usuário', async () => {
+      await http()
+        .get(`/users/${adminId}`)
+        .set(bearer(userToken))
+        .expect(403);
+    });
+
+    it('ADMIN consulta qualquer usuário', async () => {
+      await http()
+        .get(`/users/${userId}`)
+        .set(bearer(adminToken))
+        .expect(200);
     });
   });
 });

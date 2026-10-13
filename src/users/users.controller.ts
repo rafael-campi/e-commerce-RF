@@ -6,6 +6,8 @@ import {
   Patch,
   Param,
   Delete,
+  ForbiddenException,
+  Request,
 } from '@nestjs/common';
 import { UserService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -30,7 +32,10 @@ export class UsersController {
 
   @Get(':id')
   @Roles(UserType.ADMIN, UserType.USER)
-  findOne(@Param('id') id: number) {
+  findOne(@Request() req, @Param('id') id: number) {
+    if (req.user.role !== UserType.ADMIN && req.user.id !== Number(id)) {
+      throw new ForbiddenException('Você só pode consultar o próprio usuário.');
+    }
     return this.userService.find(id);
   }
 
