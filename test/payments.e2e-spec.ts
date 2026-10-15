@@ -114,6 +114,82 @@ describe('Payments (e2e)', () => {
     await pay(token, { paymentMethod: 'pix' }).expect(400);
   });
 
+  it('rejeita cartId fora do intervalo de inteiros', async () => {
+    const { token } = await newCustomer();
+
+    await pay(token, { paymentMethod: 'pix', cartId: 99999999999 }).expect(400);
+
+    expect(gateway.charge).not.toHaveBeenCalled();
+  });
+
+  describe('estoque', () => {
+    const createLimited = async (stock: number) =>
+      (
+        await http()
+          .post('/products')
+          .set(bearer(adminToken))
+          .send({
+            name: `Limitado ${stock}-${Math.random()}`,
+            description: 'desc',
+            price: 5,
+            stock,
+          })
+          .expect(201)
+      ).body;
+
+    const stockOf = async (id: number) =>
+      (await http().get(`/products/${id}`).set(bearer(adminToken)).expect(200))
+        .body.stock;
+
+    it('baixa o estoque dos itens pagos', async () => {
+      const { token } = await newCustomer();
+      const product = await createLimited(10);
+      const cart = await newCart(token, [
+        { productId: product.id, quantity: 4 },
+      ]);
+
+      await pay(token, { paymentMethod: 'pix', cartId: cart.id }).expect(201);
+
+      expect(await stockOf(product.id)).toBe(6);
+    });
+
+    it('recusa pagar quando o estoque acabou depois da criação do carrinho', async () => {
+      const first = await newCustomer();
+      const second = await newCustomer();
+      const product = await createLimited(5);
+      const items = [{ productId: product.id, quantity: 3 }];
+      const firstCart = await newCart(first.token, items);
+      const secondCart = await newCart(second.token, items);
+
+      await pay(first.token, {
+        paymentMethod: 'pix',
+        cartId: firstCart.id,
+      }).expect(201);
+      gateway.charge.mockClear();
+
+      await pay(second.token, {
+        paymentMethod: 'pix',
+        cartId: secondCart.id,
+      }).expect(409);
+
+      expect(gateway.charge).not.toHaveBeenCalled();
+      expect(await stockOf(product.id)).toBe(2);
+    });
+
+    it('não consome estoque quando o gateway falha', async () => {
+      const { token } = await newCustomer();
+      const product = await createLimited(5);
+      const cart = await newCart(token, [
+        { productId: product.id, quantity: 3 },
+      ]);
+      gateway.charge.mockRejectedValueOnce(new Error('gateway fora do ar'));
+
+      await pay(token, { paymentMethod: 'pix', cartId: cart.id }).expect(502);
+
+      expect(await stockOf(product.id)).toBe(5);
+    });
+  });
+
   it('retorna 404 para carrinho inexistente', async () => {
     const { token } = await newCustomer();
 

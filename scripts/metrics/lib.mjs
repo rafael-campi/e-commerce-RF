@@ -32,9 +32,15 @@ function phaseStats(commits) {
 export function summarize(classified, issues, baselineDate) {
   const bugs = issues.filter((i) => i.labels.includes('bug'));
   const escaped = bugs.filter((i) => i.createdAt >= baselineDate);
+  const found = issues.filter((i) => i.labels.includes('found-by-test'));
   return {
     pre: phaseStats(classified.filter((c) => c.phase === 'pre')),
     tdd: phaseStats(classified.filter((c) => c.phase === 'tdd')),
+    // defeitos achados proativamente ao escrever testes (não contam como escapados)
+    foundByTest: {
+      total: found.length,
+      fixed: found.filter((i) => i.state === 'closed').length,
+    },
     bugIssues: {
       total: bugs.length,
       open: bugs.filter((i) => i.state === 'open').length,

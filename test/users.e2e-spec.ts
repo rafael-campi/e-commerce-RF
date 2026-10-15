@@ -8,6 +8,8 @@ describe('Users (e2e)', () => {
   let app: INestApplication;
   let adminToken: string;
   let userToken: string;
+  let adminId: number;
+  let userId: number;
 
   const http = () => request(app.getHttpServer());
   const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });
@@ -15,8 +17,10 @@ describe('Users (e2e)', () => {
   beforeAll(async () => {
     app = await createTestApp();
     const admin = await createUser(app, { role: UserType.ADMIN });
+    adminId = admin.id;
     adminToken = await loginAs(app, admin.email, admin.password);
     const user = await createUser(app, { role: UserType.USER });
+    userId = user.id;
     userToken = await loginAs(app, user.email, user.password);
   });
 
@@ -105,6 +109,65 @@ describe('Users (e2e)', () => {
       await loginAs(app, target.email, 'novasenha123');
     });
 
+    it('ADMIN atualiza só o nome e preserva a senha', async () => {
+      const target = await createUser(app);
+
+      const response = await http()
+        .patch(`/users/${target.id}`)
+        .set(bearer(adminToken))
+        .send({ firstName: 'Joana' })
+        .expect(200);
+
+      expect(response.body.firstName).toBe('Joana');
+      expect(response.body.email).toBe(target.email);
+      await loginAs(app, target.email, target.password);
+    });
+
+    it('rejeita atualizar para um e-mail já usado por outro usuário', async () => {
+      const first = await createUser(app);
+      const second = await createUser(app);
+
+      await http()
+        .patch(`/users/${second.id}`)
+        .set(bearer(adminToken))
+        .send({ email: first.email })
+        .expect(400);
+    });
+
+    it('rejeita papel inválido', async () => {
+      const target = await createUser(app);
+
+      for (const role of ['ADMIN', 99, 0]) {
+        await http()
+          .patch(`/users/${target.id}`)
+          .set(bearer(adminToken))
+          .send({ role })
+          .expect(400);
+      }
+    });
+
+    it('ADMIN altera o papel de um usuário', async () => {
+      const target = await createUser(app);
+
+      const response = await http()
+        .patch(`/users/${target.id}`)
+        .set(bearer(adminToken))
+        .send({ role: UserType.MODERATOR })
+        .expect(200);
+
+      expect(response.body.role).toBe(UserType.MODERATOR);
+    });
+
+    it('rejeita id não numérico com 400', async () => {
+      await http().get('/users/abc').set(bearer(adminToken)).expect(400);
+      await http()
+        .patch('/users/abc')
+        .set(bearer(adminToken))
+        .send({ firstName: 'X' })
+        .expect(400);
+      await http().delete('/users/abc').set(bearer(adminToken)).expect(400);
+    });
+
     it('ADMIN remove um usuário', async () => {
       const target = await createUser(app);
 
@@ -132,6 +195,31 @@ describe('Users (e2e)', () => {
         .delete(`/users/${target.id}`)
         .set(bearer(userToken))
         .expect(403);
+    });
+  });
+
+  describe('GET /users/:id', () => {
+    it('USER consulta a si mesmo', async () => {
+      const response = await http()
+        .get(`/users/${userId}`)
+        .set(bearer(userToken))
+        .expect(200);
+
+      expect(response.body.id).toBe(userId);
+    });
+
+    it('USER não consulta outro usuário', async () => {
+      await http()
+        .get(`/users/${adminId}`)
+        .set(bearer(userToken))
+        .expect(403);
+    });
+
+    it('ADMIN consulta qualquer usuário', async () => {
+      await http()
+        .get(`/users/${userId}`)
+        .set(bearer(adminToken))
+        .expect(200);
     });
   });
 });

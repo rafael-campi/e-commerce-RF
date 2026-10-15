@@ -136,6 +136,72 @@ describe('Products (e2e)', () => {
     });
   });
 
+  describe('remoção de produto em uso', () => {
+    it('retorna 409 se o produto está em um carrinho e mantém o produto', async () => {
+      const product = await createProduct('Em Carrinho');
+      await http()
+        .post('/cart')
+        .set(bearer(userToken))
+        .send({ items: [{ productId: product.id, quantity: 1 }] })
+        .expect(201);
+
+      await http()
+        .delete(`/products/${product.id}`)
+        .set(bearer(adminToken))
+        .expect(409);
+
+      await http()
+        .get(`/products/${product.id}`)
+        .set(bearer(userToken))
+        .expect(200);
+    });
+  });
+
+  describe('nome duplicado', () => {
+    it('rejeita criar produto com nome já existente', async () => {
+      await createProduct('Duplicado Criação');
+
+      await http()
+        .post('/products')
+        .set(bearer(adminToken))
+        .send(validProduct('Duplicado Criação'))
+        .expect(409);
+    });
+
+    it('rejeita renomear para um nome já existente', async () => {
+      await createProduct('Nome Ocupado');
+      const other = await createProduct('Nome Livre');
+
+      await http()
+        .patch(`/products/${other.id}`)
+        .set(bearer(adminToken))
+        .send({ name: 'Nome Ocupado' })
+        .expect(409);
+    });
+
+    it('permite atualizar mantendo o próprio nome', async () => {
+      const product = await createProduct('Mesmo Nome');
+
+      await http()
+        .patch(`/products/${product.id}`)
+        .set(bearer(adminToken))
+        .send({ name: 'Mesmo Nome', stock: 7 })
+        .expect(200);
+    });
+  });
+
+  describe('id inválido', () => {
+    it('rejeita id não numérico com 400', async () => {
+      await http().get('/products/abc').set(bearer(adminToken)).expect(400);
+      await http()
+        .patch('/products/abc')
+        .set(bearer(adminToken))
+        .send({ stock: 1 })
+        .expect(400);
+      await http().delete('/products/abc').set(bearer(adminToken)).expect(400);
+    });
+  });
+
   describe('validação', () => {
     const rejects = (body: object) =>
       http().post('/products').set(bearer(adminToken)).send(body).expect(400);
