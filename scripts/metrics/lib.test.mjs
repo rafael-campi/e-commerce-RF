@@ -39,3 +39,14 @@ test('summarize conta fixes por fase e bugs escapados', () => {
   assert.equal(s.tdd.feat, 1);
   assert.deepEqual(s.bugIssues, { total: 2, open: 1, escaped: 1 });
 });
+
+test('summarize conta defeitos achados por testes separado dos escapados', () => {
+  const issues = [
+    { labels: ['found-by-test'], state: 'closed', createdAt: '2026-10-13T00:00:00Z' },
+    { labels: ['found-by-test'], state: 'open', createdAt: '2026-10-13T00:00:00Z' },
+    { labels: ['bug'], state: 'open', createdAt: '2026-10-14T00:00:00Z' },
+  ];
+  const s = summarize(classify(log, 'aaa1'), issues, '2026-10-08T22:49:01Z');
+  assert.deepEqual(s.foundByTest, { total: 2, fixed: 1 });
+  assert.equal(s.bugIssues.escaped, 1);
+});

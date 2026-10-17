@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -49,6 +49,10 @@ export class UserService {
     });
   }
 
+  async findOptional(id: number) {
+    return this.usersRepository.findOneBy({ id });
+  }
+
   async findByEmail(searchEmail: string) {
     return this.usersRepository.findOneBy({
       email: searchEmail,
@@ -61,9 +65,19 @@ export class UserService {
   ) {
     await this.exists(id);
 
-    const salt = await bcrypt.genSalt();
+    if (
+      email &&
+      (await this.usersRepository.exist({
+        where: { email, id: Not(id) },
+      }))
+    ) {
+      throw new BadRequestException('Este e-mail já está sendo usado.');
+    }
 
-    password = await bcrypt.hash(password, salt);
+    if (password) {
+      const salt = await bcrypt.genSalt();
+      password = await bcrypt.hash(password, salt);
+    }
 
     await this.usersRepository.update(id, {
       email,

@@ -101,6 +101,52 @@ describe('Cart (e2e)', () => {
     });
   });
 
+  describe('estoque', () => {
+    const createLimited = async (stock: number) =>
+      (
+        await http()
+          .post('/products')
+          .set(bearer(adminToken))
+          .send({
+            name: `Limitado ${stock}-${Math.random()}`,
+            description: 'desc',
+            price: 5,
+            stock,
+          })
+          .expect(201)
+      ).body;
+
+    it('aceita quantidade igual ao estoque', async () => {
+      const { token } = await newCustomer();
+      const product = await createLimited(3);
+
+      await createCart(token, [{ productId: product.id, quantity: 3 }]).expect(
+        201,
+      );
+    });
+
+    it('rejeita quantidade acima do estoque sem criar carrinho', async () => {
+      const { token } = await newCustomer();
+      const product = await createLimited(3);
+
+      await createCart(token, [{ productId: product.id, quantity: 4 }]).expect(
+        400,
+      );
+
+      expect(await listCarts(token)).toHaveLength(0);
+    });
+
+    it('soma linhas repetidas do mesmo produto antes de comparar com o estoque', async () => {
+      const { token } = await newCustomer();
+      const product = await createLimited(5);
+
+      await createCart(token, [
+        { productId: product.id, quantity: 3 },
+        { productId: product.id, quantity: 3 },
+      ]).expect(400);
+    });
+  });
+
   describe('listagem', () => {
     it('lista somente os carrinhos do usuário autenticado', async () => {
       const ana = await newCustomer();

@@ -42,7 +42,7 @@
 <script>
 fetch('metrics.json').then(r => r.json()).then(m => {
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-  const { pre, tdd, bugIssues } = m.summary;
+  const { pre, tdd, bugIssues, foundByTest } = m.summary;
   const pct = x => (x * 100).toFixed(0) + '%';
   document.getElementById('meta').textContent =
     `Baseline ${m.baseline.sha} (${m.baseline.date.slice(0,10)}) · atualizado em ${m.generatedAt.slice(0,16).replace('T',' ')} UTC`;
@@ -50,6 +50,7 @@ fetch('metrics.json').then(r => r.json()).then(m => {
   document.getElementById('cards').innerHTML =
     card('fixes antes do TDD', `${pre.fix} de ${pre.commits}`) +
     card('fixes na fase TDD (achados por testes)', `${tdd.fix} de ${tdd.commits}`) +
+    card('defeitos achados por testes (issues)', `${foundByTest.fixed} de ${foundByTest.total} corrigidos`) +
     card('bugs que escaparam (issues)', bugIssues.escaped) +
     card('bugs abertos agora', bugIssues.open);
 

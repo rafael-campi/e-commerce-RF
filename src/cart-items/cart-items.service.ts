@@ -1,6 +1,10 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { CartItemEntity } from './entities/card-items.entity';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { CreateCartItemDto } from './dto/create-cart-items.dto';
 import { UpdateCartItemsDto } from './dto/update-cart-items.dto';
@@ -24,7 +28,25 @@ export class CartItemsService {
       resolved.push({ product, quantity: item.quantity });
     }
 
+    this.assertWithinStock(resolved);
+
     return resolved;
+  }
+
+  private assertWithinStock(
+    items: { product: ProductEntity; quantity: number }[],
+  ) {
+    const requested = new Map<number, number>();
+    for (const { product, quantity } of items) {
+      const total = (requested.get(product.id) ?? 0) + quantity;
+      requested.set(product.id, total);
+
+      if (product.stock !== null && total > product.stock) {
+        throw new BadRequestException(
+          `Estoque insuficiente para "${product.name}": disponível ${product.stock}, pedido ${total}.`,
+        );
+      }
+    }
   }
 
   async createMany(
