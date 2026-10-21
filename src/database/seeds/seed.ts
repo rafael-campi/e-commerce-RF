@@ -55,13 +55,20 @@ export async function seed(dataSource: DataSource) {
   }
 }
 
+// yarn seed            → só acrescenta o que falta
+// yarn seed --reset    → APAGA o banco, recria o schema pelas entidades e semeia
 if (require.main === module) {
   // import tardio: data-source lê o .env, o que não deve acontecer nos testes
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { AppDataSource } = require('../data-source');
+  const reset = process.argv.includes('--reset');
   new DataSource({ ...AppDataSource.options, logging: false })
     .initialize()
-    .then((ds: DataSource) => seed(ds).then(() => ds.destroy()))
+    .then(async (ds: DataSource) => {
+      if (reset) await ds.synchronize(true);
+      await seed(ds);
+      await ds.destroy();
+    })
     .then(() => console.log('Seed concluído.'))
     .catch((error: unknown) => {
       console.error('Seed falhou', error);

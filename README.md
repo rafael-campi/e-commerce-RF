@@ -31,7 +31,7 @@ Variáveis de ambiente (`.env`):
 | `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Conexão com o Postgres | ver `.env.example` |
 | `SECRET_KEY_JWT` | Segredo usado para assinar o JWT | — (obrigatório) |
 
-Os scripts de migration existem (`yarn migration:generate`, `yarn migration:run`), mas **ainda não há arquivos de migration versionados**; gere-os antes de usar um banco de produção. O seed (`yarn seed`) cria os dados da Loja Prateleira: `admin@prateleira.com` (ADMIN) e `cliente@prateleira.com` (USER), ambos com senha `123456`, e os 12 produtos do catálogo. Pode rodar mais de uma vez sem duplicar nada.
+Os scripts de migration existem (`yarn migration:generate`, `yarn migration:run`), mas **ainda não há arquivos de migration versionados**; gere-os antes de usar um banco de produção. O seed (`yarn seed`; `yarn seed --reset` apaga o banco e recria o schema antes) cria os dados da Loja Prateleira: `admin@prateleira.com` (ADMIN) e `cliente@prateleira.com` (USER), ambos com senha `123456`, e os 12 produtos do catálogo. Pode rodar mais de uma vez sem duplicar nada.
 
 ## Endpoints
 
@@ -125,7 +125,17 @@ docker compose up -d dbtest
 yarn test:e2e
 ```
 
-O CI (GitHub Actions) roda o typecheck e os testes a cada push.
+O front tem testes **Playwright** (`web/e2e/`) que sobem a API (porta 3100) e o Vite (porta 5180) e usam o navegador de verdade: compra completa até o pedido aparecer no admin, admin criando produto, login inválido, seletor de quantidade limitado ao estoque, erro 400 no carrinho e os dois 409 do admin. Antes da suíte, o banco de teste é recriado com `yarn seed --reset`.
+
+```bash
+docker compose up -d dbtest
+cd web && npx playwright install chromium   # só na primeira vez
+yarn test:e2e
+```
+
+As duas suítes usam o mesmo banco de teste: rode uma de cada vez.
+
+O CI (GitHub Actions) roda o typecheck e os testes da API e, num job separado, o build e os testes Playwright do front a cada push.
 
 ## Desenvolvimento orientado a testes
 
