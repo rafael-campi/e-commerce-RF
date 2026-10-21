@@ -168,3 +168,31 @@ describe('Auth: usuário logado (e2e)', () => {
     await request(app.getHttpServer()).get('/auth/me').expect(401);
   });
 });
+
+describe('Datas (e2e)', () => {
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    app = await createTestApp();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('createdAt é o instante real do cadastro, qualquer que seja o fuso do servidor', async () => {
+    const before = Date.now();
+    const user = await createUser(app);
+    const token = await loginAs(app, user.email, user.password);
+
+    const me = (
+      await request(app.getHttpServer())
+        .get('/auth/me')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200)
+    ).body;
+
+    const createdAt = new Date(me.createdAt).getTime();
+    expect(Math.abs(createdAt - before)).toBeLessThan(60_000);
+  });
+});
