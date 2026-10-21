@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import QRCode from 'qrcode';
 import {
   Link,
   Navigate,
@@ -6,11 +7,24 @@ import {
   useNavigate,
   useParams,
 } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
-import { api, ApiError } from '../lib/api';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import {
+  api,
+  ApiError,
+  CardError,
+  simulatePixPayment,
+  tokenizeCard,
+  type CardField,
+} from '../lib/api';
+import { testMode } from '../lib/test-mode';
 import { useUser } from '../lib/auth';
 import { brl, cartTotal, dateTime, methodLabel } from '../lib/format';
-import type { Cart, PaymentMethod, PaymentResult } from '../lib/types';
+import type {
+  Cart,
+  PaymentAttempt,
+  PaymentMethod,
+  PaymentResult,
+} from '../lib/types';
 import {
   Alert,
   Art,
@@ -22,18 +36,41 @@ import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/toast';
 import { Header } from './Header';
 import { useCarts, useRefreshShop } from './queries';
+import {
+  CardForm,
+  checkCard,
+  emptyCard,
+  toTokenRequest,
+  type CardFormValue,
+} from './CardForm';
+
+const BRANDS: Record<string, string> = {
+  visa: 'Visa',
+  mastercard: 'Mastercard',
+  elo: 'Elo',
+  hipercard: 'Hipercard',
+  amex: 'American Express',
+};
+
+type CardSummary = { brand: string; last4: string } | null;
+
+// a validação local do cartão falhou: os erros já estão nos campos
+class CardFormInvalid extends Error {}
 
 /** O que a confirmação precisa saber do Pedido recém-criado (o cliente não tem GET de Pedido). */
 interface Receipt {
   payment: PaymentResult;
   cart: Cart;
+  card?: CardSummary;
 }
 
 function ReceiptRows({
   payment,
+  card,
   withOrder,
 }: {
   payment: PaymentResult;
+  card?: CardSummary;
   withOrder?: boolean;
 }) {
   const toast = useToast();
@@ -72,6 +109,11 @@ function ReceiptRows({
             size={16}
           />
           {methodLabel(payment.payment_method)}
+          {card && (
+            <span className="faint">
+              · {BRANDS[card.brand] ?? card.brand} •••• {card.last4}
+            </span>
+          )}
         </span>
       </div>
       {withOrder && (
@@ -88,6 +130,292 @@ function ReceiptRows({
   );
 }
 
+/** "14:59" até o prazo do Pix; atualiza a cada segundo. */
+function useCountdown(until: string | null) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  if (!until) return null;
+  const left = Math.max(0, Math.floor((Date.parse(until) - now) / 1000));
+  const mm = String(Math.floor(left / 60)).padStart(2, '0');
+  const ss = String(left % 60).padStart(2, '0');
+  return { left, label: `${mm}:${ss}` };
+}
+
+/**
+ * Acompanha uma Tentativa pendente até o PSP decidir (o webhook chega na
+ * API; aqui consultamos a cada 2 s) e avisa quando ela vira Pedido.
+ */
+function useTrackedAttempt(
+  initial: PaymentAttempt,
+  onPaid: (order: PaymentResult) => void,
+) {
+  const tracked = useQuery({
+    queryKey: ['payment-attempt', initial.id],
+    queryFn: () => api.paymentAttempt(initial.id),
+    initialData: initial,
+    refetchInterval: (q) => (q.state.data?.status === 'pending' ? 2000 : false),
+  });
+  const attempt = tracked.data;
+
+  useEffect(() => {
+    if (attempt.status === 'succeeded' && attempt.order) onPaid(attempt.order);
+  }, [attempt, onPaid]);
+
+  return tracked;
+}
+
+const ENDED: Record<string, { title: string; msg: string }> = {
+  expired: {
+    title: 'O Pix expirou',
+    msg: 'O prazo para pagar acabou e nada foi cobrado. Os itens voltaram ao estoque e o carrinho continua salvo.',
+  },
+  canceled: {
+    title: 'Pagamento cancelado',
+    msg: 'Nada foi cobrado. O carrinho continua salvo para você pagar de outra forma.',
+  },
+  failed: {
+    title: 'O pagamento não foi aprovado',
+    msg: 'Nada foi cobrado e o carrinho continua salvo.',
+  },
+};
+
+/**
+ * Pix pendente: mostra o QR Code e acompanha a Tentativa até o PSP avisar
+ * (por webhook, na API) que o dinheiro chegou.
+ */
+function PixWaiting({
+  attempt: initial,
+  onPaid,
+  onRestart,
+}: {
+  attempt: PaymentAttempt;
+  onPaid: (order: PaymentResult) => void;
+  onRestart: () => void;
+}) {
+  const toast = useToast();
+  const [qr, setQr] = useState<string | null>(null);
+  const copiaECola = initial.pix?.copiaECola ?? '';
+
+  const tracked = useTrackedAttempt(initial, onPaid);
+  const attempt = tracked.data;
+  const countdown = useCountdown(attempt.expiresAt);
+
+  useEffect(() => {
+    QRCode.toDataURL(copiaECola, { margin: 1, width: 232 }).then(setQr, () =>
+      setQr(null),
+    );
+  }, [copiaECola]);
+
+  const cancel = useMutation({
+    mutationFn: () => api.cancelPaymentAttempt(attempt.id),
+    onSuccess: (result) => {
+      if (result.status === 'succeeded' && result.order) onPaid(result.order);
+      else onRestart();
+    },
+    onError: (error) =>
+      toast('error', 'Não foi possível cancelar', error.message),
+  });
+
+  const simulate = useMutation({
+    mutationFn: () => simulatePixPayment(copiaECola),
+    onSuccess: () => tracked.refetch(),
+    onError: (error) => toast('error', 'Simulação falhou', error.message),
+  });
+
+  const copy = () => {
+    const done = () => toast('info', 'Pix copia e cola copiado');
+    navigator.clipboard?.writeText(copiaECola).then(done, done) ?? done();
+  };
+
+  if (ENDED[attempt.status])
+    return <AttemptEnded attempt={attempt} onRestart={onRestart} />;
+
+  return (
+    <div className="receipt">
+      <div
+        className="panel panel-b"
+        style={{ display: 'flex', flexDirection: 'column', gap: 18 }}
+      >
+        <div className="r-head">
+          <div className="r-ic wait">
+            <Icon name="pix" size={32} />
+          </div>
+          <h1 className="h2">Pague com Pix</h1>
+          <p className="muted">
+            Abra o app do seu banco, escolha pagar com Pix e escaneie o QR Code
+            ou cole o código abaixo.
+          </p>
+        </div>
+        <div style={{ display: 'grid', placeItems: 'center' }}>
+          {qr ? (
+            <img
+              src={qr}
+              width={232}
+              height={232}
+              alt={`QR Code Pix de ${brl(attempt.amount)}`}
+              style={{ borderRadius: 8, background: '#fff' }}
+            />
+          ) : (
+            <div className="skel" style={{ width: 232, height: 232 }} />
+          )}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <span className="eyebrow">Pix copia e cola</span>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <code
+              className="mono"
+              style={{
+                flex: 1,
+                minWidth: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {copiaECola}
+            </code>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={copy}
+              aria-label="Copiar Pix copia e cola"
+            >
+              <Icon name="copy" size={14} />
+              Copiar
+            </button>
+          </div>
+        </div>
+        <hr className="divider" />
+        <div className="r-rows">
+          <div className="r-row">
+            <span>Status</span>
+            <span className="badge b-warning" aria-live="polite">
+              Aguardando pagamento
+            </span>
+          </div>
+          <div className="r-row">
+            <span>Valor</span>
+            <strong className="num">{brl(attempt.amount)}</strong>
+          </div>
+          {countdown && (
+            <div className="r-row">
+              <span>Expira em</span>
+              <span
+                className="num"
+                style={{ display: 'flex', gap: 6, alignItems: 'center' }}
+              >
+                <Icon name="clock" size={14} />
+                {countdown.label}
+              </span>
+            </div>
+          )}
+        </div>
+        <p className="help">
+          <Icon name="shield" size={14} />
+          <span>
+            Assim que o banco confirmar, esta página mostra o pedido. Você pode
+            deixá-la aberta.
+          </span>
+        </p>
+        <div className="r-acts">
+          {testMode && (
+            <button
+              className={`btn btn-primary${simulate.isPending ? ' is-loading' : ''}`}
+              onClick={() => simulate.mutate()}
+            >
+              Simular pagamento (teste)
+            </button>
+          )}
+          <button
+            className={`btn btn-secondary${cancel.isPending ? ' is-loading' : ''}`}
+            onClick={() => cancel.mutate()}
+          >
+            Cancelar e escolher outra forma
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AttemptWaiting(props: {
+  attempt: PaymentAttempt;
+  onPaid: (order: PaymentResult) => void;
+  onRestart: () => void;
+}) {
+  return props.attempt.pix ? (
+    <PixWaiting {...props} />
+  ) : (
+    <CardProcessing {...props} />
+  );
+}
+
+function AttemptEnded({
+  attempt,
+  onRestart,
+}: {
+  attempt: PaymentAttempt;
+  onRestart: () => void;
+}) {
+  const ended = ENDED[attempt.status];
+  return (
+    <div className="receipt">
+      <Alert
+        tone="danger"
+        title={ended.title}
+        actions={
+          <button className="btn btn-primary btn-sm" onClick={onRestart}>
+            Escolher como pagar
+          </button>
+        }
+      >
+        {attempt.failure ? `${attempt.failure.message} ` : ''}
+        {ended.msg}
+      </Alert>
+    </div>
+  );
+}
+
+/**
+ * Cartão pendente: a operadora não respondeu a tempo. O PSP tenta de novo
+ * (sem cobrar duas vezes) e avisa o resultado; aqui só esperamos.
+ */
+function CardProcessing({
+  attempt: initial,
+  onPaid,
+  onRestart,
+}: {
+  attempt: PaymentAttempt;
+  onPaid: (order: PaymentResult) => void;
+  onRestart: () => void;
+}) {
+  const attempt = useTrackedAttempt(initial, onPaid).data;
+
+  if (ENDED[attempt.status])
+    return <AttemptEnded attempt={attempt} onRestart={onRestart} />;
+
+  return (
+    <div className="receipt">
+      <div className="panel panel-b r-head" aria-live="polite">
+        <div className="r-ic wait">
+          <Icon name="card" size={32} />
+        </div>
+        <h1 className="h2">Confirmando com a operadora</h1>
+        <p className="muted">
+          A operadora do cartão está demorando a responder. Isso costuma levar
+          poucos segundos e você não será cobrado duas vezes. Não feche esta
+          página.
+        </p>
+        <span className="badge b-warning">
+          Processando {brl(attempt.amount)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function PaymentPage() {
   const cartId = Number(useParams().id);
   const navigate = useNavigate();
@@ -95,26 +423,67 @@ export function PaymentPage() {
   const carts = useCarts();
   const [method, setMethod] = useState<PaymentMethod>('pix');
   const [done, setDone] = useState<Receipt | null>(null);
+  const [waiting, setWaiting] = useState<{
+    attempt: PaymentAttempt;
+    cart: Cart;
+  } | null>(null);
   const [problem, setProblem] = useState<{ title: string; msg: string } | null>(
     null,
   );
+  const config = useQuery({
+    queryKey: ['checkout-config'],
+    queryFn: api.checkoutConfig,
+    staleTime: Infinity,
+  });
+  const cardConfig = config.data?.card ?? null;
+  const [card, setCard] = useState<CardFormValue>(emptyCard);
+  const [cardErrors, setCardErrors] = useState<
+    Partial<Record<CardField, string>>
+  >({});
 
   const cart = carts.data?.find((c) => c.id === cartId);
 
   const pay = useMutation({
-    mutationFn: (c: Cart) => api.pay(c.id, method),
-    onSuccess: async (payment, c) => {
-      setDone({ payment, cart: c }); // guarda antes: depois do refresh o carrinho some da lista
+    mutationFn: async (c: Cart) => {
+      if (method !== 'credit_card' || !cardConfig) return api.pay(c.id, method);
+
+      // o cartão vai do navegador direto ao PSP; a loja recebe só o token
+      const errors = checkCard(card);
+      setCardErrors(errors);
+      if (Object.keys(errors).length) throw new CardFormInvalid();
+      const token = await tokenizeCard(cardConfig, toTokenRequest(card));
+      return api.pay(c.id, 'credit_card', {
+        token: token.id,
+        installments: card.installments,
+      });
+    },
+    onSuccess: async (attempt, c) => {
+      // guarda o carrinho antes: depois do refresh ele some da lista
+      if (attempt.status === 'succeeded' && attempt.order)
+        setDone({ payment: attempt.order, cart: c, card: attempt.card });
+      else setWaiting({ attempt, cart: c });
+      setCard(emptyCard);
       await refresh();
     },
     onError: async (error) => {
+      if (error instanceof CardFormInvalid) return;
+      if (error instanceof CardError) {
+        if (error.field) setCardErrors({ [error.field]: error.message });
+        else setProblem({ title: 'Cartão não aceito', msg: error.message });
+        return;
+      }
       const status = error instanceof ApiError ? error.status : 0;
-      if (status === 409 && /estoque/i.test(error.message))
+      if (status === 402)
+        setProblem({
+          title: 'O pagamento não foi aprovado',
+          msg: `${error.message} Nada foi cobrado e o carrinho continua salvo.`,
+        });
+      else if (status === 409 && /estoque/i.test(error.message))
         setProblem({
           title: 'Estoque insuficiente',
           msg: 'Algum item deste carrinho não tem mais estoque suficiente. Ajuste a quantidade e tente de novo.',
         });
-      else if (status === 502)
+      else if (status === 402 || status === 502)
         setProblem({
           title: 'O pagamento não foi aprovado',
           msg: 'A operadora recusou ou não respondeu. Nada foi cobrado e o carrinho continua salvo.',
@@ -150,7 +519,7 @@ export function PaymentPage() {
                 <p className="eyebrow" style={{ marginBottom: 4 }}>
                   Comprovante
                 </p>
-                <ReceiptRows payment={done.payment} />
+                <ReceiptRows payment={done.payment} card={done.card} />
               </div>
               <div className="r-acts">
                 <button
@@ -167,6 +536,32 @@ export function PaymentPage() {
               </div>
             </div>
           </div>
+        </main>
+      </>
+    );
+
+  if (waiting)
+    return (
+      <>
+        <Header />
+        <main className="page">
+          <CheckoutSteps current={1} />
+          <AttemptWaiting
+            attempt={waiting.attempt}
+            onPaid={(order) => {
+              setDone({
+                payment: order,
+                cart: waiting.cart,
+                card: waiting.attempt.card,
+              });
+              setWaiting(null);
+              void refresh();
+            }}
+            onRestart={() => {
+              setWaiting(null);
+              void refresh();
+            }}
+          />
         </main>
       </>
     );
@@ -247,12 +642,17 @@ export function PaymentPage() {
               >
                 {(
                   [
-                    ['pix', 'pix', 'Pix', 'Aprovação na hora'],
+                    [
+                      'pix',
+                      'pix',
+                      'Pix',
+                      'QR Code no app do banco · confirmação em segundos',
+                    ],
                     [
                       'credit_card',
                       'card',
                       'Cartão de crédito',
-                      'Visa, Mastercard e Elo · até 3× sem juros',
+                      'Visa, Mastercard, Elo e Hipercard · até 3× sem juros',
                     ],
                   ] as const
                 ).map(([value, icon, title, desc]) => (
@@ -277,6 +677,18 @@ export function PaymentPage() {
                   </button>
                 ))}
               </div>
+              {method === 'credit_card' && cardConfig && (
+                <CardForm
+                  value={card}
+                  onChange={(next) => {
+                    setCard(next);
+                    setCardErrors({});
+                  }}
+                  errors={cardErrors}
+                  total={cartTotal(cart)}
+                  disabled={busy}
+                />
+              )}
               <p className="help">
                 <Icon name="shield" size={14} />
                 <span>
@@ -392,7 +804,7 @@ export function ConfirmationPage() {
               ))}
             </div>
             <hr className="divider" />
-            <ReceiptRows payment={payment} withOrder />
+            <ReceiptRows payment={payment} card={state.card} withOrder />
             <div className="r-acts">
               <Link className="btn btn-primary btn-lg" to="/produtos">
                 Continuar comprando

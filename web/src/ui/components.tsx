@@ -18,6 +18,8 @@ export function Field({
   icon,
   right,
   autoComplete = 'off',
+  inputMode,
+  maxLength,
   area,
   className = '',
 }: {
@@ -33,6 +35,8 @@ export function Field({
   icon?: IconName;
   right?: ReactNode;
   autoComplete?: string;
+  inputMode?: 'text' | 'numeric' | 'email';
+  maxLength?: number;
   area?: boolean;
   className?: string;
 }) {
@@ -55,7 +59,13 @@ export function Field({
         {area ? (
           <textarea {...common} />
         ) : (
-          <input {...common} type={type} autoComplete={autoComplete} />
+          <input
+            {...common}
+            type={type}
+            autoComplete={autoComplete}
+            inputMode={inputMode}
+            maxLength={maxLength}
+          />
         )}
         {right}
       </div>
