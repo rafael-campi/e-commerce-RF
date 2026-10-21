@@ -31,7 +31,7 @@ Variáveis de ambiente (`.env`):
 | `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Conexão com o Postgres | ver `.env.example` |
 | `SECRET_KEY_JWT` | Segredo usado para assinar o JWT | — (obrigatório) |
 
-Os scripts de migration existem (`yarn migration:generate`, `yarn migration:run`), mas **ainda não há arquivos de migration versionados**; gere-os antes de usar um banco de produção. O seed (`yarn seed`; `yarn seed --reset` apaga o banco e recria o schema antes) cria os dados da Loja Prateleira: `admin@prateleira.com` (ADMIN) e `cliente@prateleira.com` (USER), ambos com senha `123456`, e os 12 produtos do catálogo. Pode rodar mais de uma vez sem duplicar nada.
+Os scripts de migration existem (`yarn migration:generate`, `yarn migration:run`), mas **ainda não há arquivos de migration versionados**; gere-os antes de usar um banco de produção. O seed (`yarn seed`; `yarn seed --reset` apaga o banco e recria o schema antes; `yarn seed --demo` acrescenta clientes e ~120 Pedidos de exemplo dos últimos 30 dias, com referência `DEMO-…` e sem mexer no estoque, para o dashboard ter dados) cria os dados da Loja Prateleira: `admin@prateleira.com` (ADMIN) e `cliente@prateleira.com` (USER), ambos com senha `123456`, e os 12 produtos do catálogo. Pode rodar mais de uma vez sem duplicar nada.
 
 ## Endpoints
 
