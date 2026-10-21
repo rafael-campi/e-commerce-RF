@@ -94,3 +94,16 @@ test('dashboard filtra por período e valida o personalizado', async ({
     page.getByText('O período pode ter no máximo 60 dias.'),
   ).toBeVisible();
 });
+
+test('financeiro sem PSP explica como ligar a loja a um', async ({ page }) => {
+  await loginAsAdmin(page, '/admin/financeiro');
+
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Financeiro' }),
+  ).toBeVisible();
+  await expect(page.getByText('Financeiro indisponível')).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Financeiro/ })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+});

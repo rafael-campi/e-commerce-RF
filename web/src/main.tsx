@@ -28,6 +28,7 @@ import { AdminDashboardPage } from './admin/AdminDashboard';
 import { AdminProductsPage } from './admin/AdminProducts';
 import { AdminUsersPage } from './admin/AdminUsers';
 import { AdminOrdersPage } from './admin/AdminOrders';
+import { AdminFinancePage } from './admin/AdminFinance';
 
 // Só existe em desenvolvimento: no build de produção a rota e o arquivo somem.
 const DesignSystem = import.meta.env.DEV
@@ -192,6 +193,14 @@ function App() {
               element={
                 <Protected admin>
                   <AdminOrdersPage />
+                </Protected>
+              }
+            />
+            <Route
+              path="/admin/financeiro"
+              element={
+                <Protected admin>
+                  <AdminFinancePage />
                 </Protected>
               }
             />

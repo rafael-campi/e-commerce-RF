@@ -7,7 +7,7 @@ import {
   logout,
 } from './helpers';
 
-test('compra completa: produto → carrinho → pagamento → pedido no dashboard e no admin', async ({
+test('compra completa: produto → carrinho → pagamento → pedido no admin → estorno', async ({
   page,
 }) => {
   await loginAsCliente(page);
@@ -76,4 +76,33 @@ test('compra completa: produto → carrinho → pagamento → pedido no dashboar
   await expect(row).toContainText('R$ 99,80');
   await expect(row).toContainText('Cartão');
   await expect(row).toContainText('Pago');
+
+  // o administrador estorna o pedido: os itens voltam ao estoque e a receita some
+  await row.click();
+  const drawer = page.getByRole('dialog', { name: `Pedido ${orderId}` });
+  await drawer.getByRole('button', { name: 'Estornar pedido' }).click();
+  const confirm = page.getByRole('dialog', { name: `Estornar pedido ${orderId}` });
+  await expect(confirm).toContainText('os itens voltam ao estoque');
+  await confirm.getByRole('button', { name: 'Estornar R$ 99,80' }).click();
+  await expect(drawer.getByText('Estornado', { exact: true })).toBeVisible();
+  await expect(
+    drawer.getByRole('button', { name: 'Estornar pedido' }),
+  ).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(row).toContainText('Estornado');
+
+  await page.getByRole('link', { name: 'Dashboard' }).click();
+  await page
+    .getByRole('group', { name: 'Período' })
+    .getByRole('button', { name: 'Hoje' })
+    .click();
+  await expect(
+    page.locator('.kpi').filter({ hasText: 'Pedidos pagos' }),
+  ).toContainText('0');
+
+  await page.goto('/produtos');
+  await page
+    .getByRole('link', { name: 'Caneca Cerâmica Fosca 350 ml' })
+    .click();
+  await expect(page.getByText('5 unidades disponíveis')).toBeVisible();
 });

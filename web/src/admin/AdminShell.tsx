@@ -27,6 +27,7 @@ function Sidebar() {
     ['/admin/produtos', 'package', 'Produtos'],
     ['/admin/usuarios', 'users', 'Usuários'],
     ['/admin/pedidos', 'receipt', 'Pedidos'],
+    ['/admin/financeiro', 'trending-up', 'Financeiro'],
   ];
 
   return (
