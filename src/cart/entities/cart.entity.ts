@@ -1,4 +1,5 @@
 import { PaymentEntity } from 'src/payments/entities/payment.entity';
+import { PaymentAttemptEntity } from 'src/payments/entities/payment-attempt.entity';
 import { CartItemEntity } from '../../cart-items/entities/card-items.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 import {
@@ -29,4 +30,7 @@ export class CartEntity {
       onDelete: 'CASCADE',
     })
     payment: PaymentEntity;
+
+  @OneToMany(() => PaymentAttemptEntity, (attempt) => attempt.cart)
+  attempts: PaymentAttemptEntity[];
 }

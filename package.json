@@ -26,7 +26,8 @@
     "migration:run": "npm run typeorm migration:run -- -d ./src/database/data-source.ts",
     "migration:revert": "npm run typeorm migration:revert -- -d ./src/database/data-source.ts",
     "schema:sync": "npm run typeorm schema:sync -- -d ./src/database/data-source.ts",
-    "schema:drop": "npm run typeorm schema:drop -- -d ./src/database/data-source.ts"
+    "schema:drop": "npm run typeorm schema:drop -- -d ./src/database/data-source.ts",
+    "psp:setup": "node scripts/psp/setup.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

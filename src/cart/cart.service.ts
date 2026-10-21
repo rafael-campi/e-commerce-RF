@@ -14,6 +14,7 @@ import { UserEntity } from 'src/users/entities/user.entity';
 import { PaymentEntity } from '../payments/entities/payment.entity';
 import { CartItemsService } from 'src/cart-items/cart-items.service';
 import { CartItemEntity } from 'src/cart-items/entities/card-items.entity';
+import { PaymentAttemptStatus } from '../enums/payment.enums';
 
 @Injectable()
 export class CartService {
@@ -91,7 +92,7 @@ export class CartService {
   async findOwned(id: number, user: UserEntity) {
     return this.cartRepository.findOne({
       where: { id, user: { id: user.id } },
-      relations: ['cartItem', 'cartItem.product', 'payment'],
+      relations: ['cartItem', 'cartItem.product', 'payment', 'attempts'],
     });
   }
 
@@ -115,6 +116,12 @@ export class CartService {
     }
     if (cart.payment) {
       throw new ConflictException(`O carrinho ${id} já foi pago.`);
+    }
+    // o Estoque está reservado para a Tentativa: os itens não podem mudar
+    if (cart.attempts.some((a) => a.status === PaymentAttemptStatus.PENDING)) {
+      throw new ConflictException(
+        `O carrinho ${id} tem um pagamento em andamento.`,
+      );
     }
 
     return cart;

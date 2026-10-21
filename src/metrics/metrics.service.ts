@@ -1,7 +1,15 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { And, IsNull, LessThan, MoreThanOrEqual, Repository } from 'typeorm';
+import {
+  And,
+  IsNull,
+  LessThan,
+  MoreThanOrEqual,
+  Not,
+  Repository,
+} from 'typeorm';
 import { PaymentEntity } from '../payments/entities/payment.entity';
+import { PaymentStatus } from '../enums/payment.enums';
 import { UserEntity } from '../users/entities/user.entity';
 import { CartEntity } from '../cart/entities/cart.entity';
 
@@ -55,8 +63,12 @@ export class MetricsService {
       And(MoreThanOrEqual(new Date(a)), LessThan(new Date(b)));
 
     // Pedido = carrinho pago (ver CONTEXT.md)
+    // estornados não contam: o dinheiro voltou ao Cliente
     const orders = await this.payments.find({
-      where: { createdAt: between(previousStart, end) },
+      where: {
+        createdAt: between(previousStart, end),
+        payment_status: Not(PaymentStatus.REFUNDED),
+      },
       relations: ['carts', 'carts.cartItem', 'carts.cartItem.product'],
     });
     const signups = await this.users.find({

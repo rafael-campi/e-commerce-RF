@@ -1,6 +1,7 @@
 import * as request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { createTestApp } from './helpers/app';
+import { approvingGateway } from './helpers/gateway';
 import { createUser, loginAs, TestUser } from './helpers/users';
 import { UserType } from '../src/enums/user-types.enum';
 
@@ -28,7 +29,7 @@ describe('Orders (e2e)', () => {
         .set(bearer(token))
         .send({ paymentMethod, cartId: cart.id })
         .expect(201)
-    ).body;
+    ).body.order; // aprovado na hora: a Tentativa já virou Pedido
   };
 
   const listOrders = (token: string) =>
@@ -36,7 +37,7 @@ describe('Orders (e2e)', () => {
 
   beforeAll(async () => {
     app = await createTestApp({
-      paymentGateway: { charge: async () => ({ reference: 'PAG-TESTE' }) },
+      paymentGateway: approvingGateway(),
     });
     const admin = await createUser(app, { role: UserType.ADMIN });
     adminToken = await loginAs(app, admin.email, admin.password);
@@ -90,7 +91,7 @@ describe('Orders (e2e)', () => {
       amount: '45.50',
       paymentMethod: 'credit_card',
       status: 'paid',
-      gatewayReference: 'PAG-TESTE',
+      gatewayReference: expect.stringMatching(/^PAG-TESTE-/),
       cartId: payment.cartId,
       customer: { id: user.id, email: user.email },
     });

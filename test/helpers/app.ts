@@ -6,9 +6,12 @@ import {
   PAYMENT_GATEWAY,
   PaymentGateway,
 } from '../../src/payments/gateway/payment-gateway';
+import { PSP_CLIENT } from '../../src/psp/psp-client';
 
 export interface TestAppOptions {
   paymentGateway?: PaymentGateway;
+  // imita o PSP (só o método request); sem ele, a loja roda sem PSP
+  pspClient?: { request: (...args: unknown[]) => Promise<unknown> };
 }
 
 export async function createTestApp(
@@ -22,8 +25,12 @@ export async function createTestApp(
       .useValue(options.paymentGateway);
   }
 
+  if (options.pspClient) {
+    builder = builder.overrideProvider(PSP_CLIENT).useValue(options.pspClient);
+  }
+
   const moduleRef = await builder.compile();
-  const app = moduleRef.createNestApplication();
+  const app = moduleRef.createNestApplication({ rawBody: true });
   await app.init();
 
   // banco de teste sempre começa do zero, com o schema atual das entidades
