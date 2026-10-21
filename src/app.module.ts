@@ -21,6 +21,7 @@ import { DataSource } from 'typeorm';
 import { AuthModule } from './auth/auth.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { PspModule } from './psp/psp.module';
+import { FinanceModule } from './finance/finance.module';
 import { AppDataSource } from './database/data-source';
 import { APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
@@ -51,6 +52,7 @@ import { UserTypesGuard } from './guards/auth.guard';
     AuthModule,
     MetricsModule,
     PspModule,
+    FinanceModule,
   ],
   controllers: [AppController],
   providers: [
