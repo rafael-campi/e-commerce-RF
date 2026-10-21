@@ -1,5 +1,6 @@
 import type {
   Cart,
+  Metrics,
   Order,
   PaymentMethod,
   PaymentResult,
@@ -119,6 +120,8 @@ export const api = {
   pay: (cartId: number, paymentMethod: PaymentMethod) =>
     request<PaymentResult>('POST', '/payment', { cartId, paymentMethod }),
   orders: () => request<Order[]>('GET', '/orders'),
+  metrics: (from: string, to: string) =>
+    request<Metrics>('GET', `/admin/metrics?from=${from}&to=${to}`),
 
   users: () => request<User[]>('GET', '/users'),
   updateUser: (

@@ -17,12 +17,13 @@ export const useOrders = () =>
 function Sidebar() {
   const { pathname } = useLocation();
   const { logout } = useAuth();
-  const counts = {
+  const counts: Record<string, number | undefined> = {
     '/admin/produtos': useProducts().data?.length,
     '/admin/usuarios': useUsers().data?.length,
     '/admin/pedidos': useOrders().data?.length,
   };
-  const items: [keyof typeof counts, IconName, string][] = [
+  const items: [string, IconName, string][] = [
+    ['/admin', 'dashboard', 'Dashboard'],
     ['/admin/produtos', 'package', 'Produtos'],
     ['/admin/usuarios', 'users', 'Usuários'],
     ['/admin/pedidos', 'receipt', 'Pedidos'],
@@ -31,7 +32,7 @@ function Sidebar() {
   return (
     <nav className="sidebar" aria-label="Admin">
       <div style={{ padding: '4px 6px 12px' }}>
-        <Logo to="/admin/produtos" />
+        <Logo to="/admin" />
       </div>
       <span className="sb-sec">Admin</span>
       {items.map(([to, icon, label]) => {
@@ -91,7 +92,7 @@ export function AdminShell({
               >
                 <Icon name="menu" size={22} />
               </button>
-              <Logo to="/admin/produtos" />
+              <Logo to="/admin" />
             </>
           ) : (
             <div className="crumbs">

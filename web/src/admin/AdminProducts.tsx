@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../lib/api';
 import { useDevice } from '../lib/device';
@@ -281,6 +282,16 @@ export function AdminProductsPage() {
   const [q, setQ] = useState('');
   const [editing, setEditing] = useState<Editing | null>(null);
   const [removing, setRemoving] = useState<Product | null>(null);
+  const [params, setParams] = useSearchParams();
+
+  // /admin/produtos?editar=3 abre a edição direto (botão "Repor" do dashboard)
+  const editId = Number(params.get('editar'));
+  useEffect(() => {
+    const product = products.data?.find((p) => p.id === editId);
+    if (!product) return;
+    setEditing({ mode: 'editar', product });
+    setParams({}, { replace: true });
+  }, [editId, products.data, setParams]);
 
   const all = products.data ?? [];
   const term = q.trim().toLowerCase();

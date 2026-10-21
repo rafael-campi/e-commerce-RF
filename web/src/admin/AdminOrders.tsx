@@ -7,7 +7,7 @@ import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/toast';
 import { AdminShell, TableSkel, useOrders } from './AdminShell';
 
-function OrderDrawer({
+export function OrderDrawer({
   order: o,
   onClose,
 }: {
@@ -98,31 +98,18 @@ function OrderDrawer({
   );
 }
 
-export function AdminOrdersPage() {
+/** Lista de Pedidos (tabela no desktop, linhas no celular); sem o painel em volta. */
+export function OrdersTable({
+  orders: list,
+  onOpen,
+}: {
+  orders: Order[];
+  onOpen: (order: Order) => void;
+}) {
   const mobile = useDevice() === 'mobile';
-  const orders = useOrders();
-  const [open, setOpen] = useState<Order | null>(null);
-  const list = orders.data ?? [];
-
-  let body;
-  if (orders.isPending) body = <TableSkel cols={6} rows={7} />;
-  else if (orders.isError)
-    body = (
-      <LoadError
-        what="os pedidos"
-        code="GET /orders"
-        onRetry={() => orders.refetch()}
-      />
-    );
-  else if (!list.length)
-    body = (
-      <StateBlock icon="receipt" title="Nenhum pedido ainda" boxed>
-        Quando os clientes pagarem um carrinho, os pedidos aparecem aqui.
-      </StateBlock>
-    );
-  else if (mobile)
-    body = (
-      <div className="panel mlist">
+  if (mobile)
+    return (
+      <div className="mlist">
         {list.map((o) => (
           <button
             key={o.id}
@@ -135,7 +122,7 @@ export function AdminOrdersPage() {
               textAlign: 'left',
               cursor: 'pointer',
             }}
-            onClick={() => setOpen(o)}
+            onClick={() => onOpen(o)}
           >
             <div className="grow">
               <b>
@@ -160,64 +147,92 @@ export function AdminOrdersPage() {
         ))}
       </div>
     );
+  return (
+    <div className="tbl-wrap">
+      <table className="tbl">
+        <thead>
+          <tr>
+            <th>Pedido</th>
+            <th>Cliente</th>
+            <th className="r">Valor</th>
+            <th>Método</th>
+            <th>Status</th>
+            <th>Data</th>
+          </tr>
+        </thead>
+        <tbody>
+          {list.map((o) => (
+            <tr key={o.id} className="clickable" onClick={() => onOpen(o)}>
+              <td>
+                <button
+                  className="mono"
+                  style={{
+                    border: 0,
+                    background: 'none',
+                    padding: 0,
+                    color: 'var(--text-brand)',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => onOpen(o)}
+                >
+                  #{o.id}
+                </button>
+              </td>
+              <td>{fullName(o.customer)}</td>
+              <td className="r num">{brl(o.amount)}</td>
+              <td>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    gap: 6,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Icon
+                    name={o.paymentMethod === 'pix' ? 'pix' : 'card'}
+                    size={16}
+                  />
+                  {o.paymentMethod === 'pix' ? 'Pix' : 'Cartão'}
+                </span>
+              </td>
+              <td>
+                <span className="badge b-success">Pago</span>
+              </td>
+              <td className="num faint">{dateTime(o.createdAt)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export function AdminOrdersPage() {
+  const orders = useOrders();
+  const [open, setOpen] = useState<Order | null>(null);
+  const list = orders.data ?? [];
+
+  let body;
+  if (orders.isPending) body = <TableSkel cols={6} rows={7} />;
+  else if (orders.isError)
+    body = (
+      <LoadError
+        what="os pedidos"
+        code="GET /orders"
+        onRetry={() => orders.refetch()}
+      />
+    );
+  else if (!list.length)
+    body = (
+      <StateBlock icon="receipt" title="Nenhum pedido ainda" boxed>
+        Quando os clientes pagarem um carrinho, os pedidos aparecem aqui.
+      </StateBlock>
+    );
   else
     body = (
-      <div className="panel tbl-wrap">
-        <table className="tbl">
-          <thead>
-            <tr>
-              <th>Pedido</th>
-              <th>Cliente</th>
-              <th className="r">Valor</th>
-              <th>Método</th>
-              <th>Status</th>
-              <th>Data</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.map((o) => (
-              <tr key={o.id} className="clickable" onClick={() => setOpen(o)}>
-                <td>
-                  <button
-                    className="mono"
-                    style={{
-                      border: 0,
-                      background: 'none',
-                      padding: 0,
-                      color: 'var(--text-brand)',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                    onClick={() => setOpen(o)}
-                  >
-                    #{o.id}
-                  </button>
-                </td>
-                <td>{fullName(o.customer)}</td>
-                <td className="r num">{brl(o.amount)}</td>
-                <td>
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      gap: 6,
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Icon
-                      name={o.paymentMethod === 'pix' ? 'pix' : 'card'}
-                      size={16}
-                    />
-                    {o.paymentMethod === 'pix' ? 'Pix' : 'Cartão'}
-                  </span>
-                </td>
-                <td>
-                  <span className="badge b-success">Pago</span>
-                </td>
-                <td className="num faint">{dateTime(o.createdAt)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="panel">
+        <OrdersTable orders={list} onOpen={setOpen} />
       </div>
     );
 

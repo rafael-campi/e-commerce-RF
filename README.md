@@ -111,6 +111,7 @@ Contas: `cliente@prateleira.com` (cliente) e `admin@prateleira.com` (administrad
 | `/carrinhos` | Carrinhos abertos do cliente |
 | `/carrinhos/:id/pagamento`, `/pedidos/:id` | Pagamento e confirmação do Pedido |
 | `/perfil` | Dados da conta |
+| `/admin` | Dashboard: KPIs, gráficos e tabelas do período (hoje, 7 ou 30 dias, ou personalizado até 60), com exportação em CSV |
 | `/admin/produtos`, `/admin/usuarios`, `/admin/pedidos` | Área do administrador |
 | `/design-system` | Componentes e cores nos dois temas (**só em `yarn dev`**, fora do build) |
 
@@ -131,7 +132,7 @@ docker compose up -d dbtest
 yarn test:e2e
 ```
 
-O front tem testes **Playwright** (`web/e2e/`) que sobem a API (porta 3100) e o Vite (porta 5180) e usam o navegador de verdade: compra completa até o pedido aparecer no admin, admin criando produto, login inválido, seletor de quantidade limitado ao estoque, erro 400 no carrinho e os dois 409 do admin. Antes da suíte, o banco de teste é recriado com `yarn seed --reset`.
+O front tem testes **Playwright** (`web/e2e/`) que sobem a API (porta 3100) e o Vite (porta 5180) e usam o navegador de verdade: compra completa até o pedido aparecer no dashboard e no admin, filtro de período do dashboard, admin criando produto, login inválido, seletor de quantidade limitado ao estoque, erro 400 no carrinho e os dois 409 do admin. Antes da suíte, o banco de teste é recriado com `yarn seed --reset`.
 
 ```bash
 docker compose up -d dbtest

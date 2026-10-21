@@ -79,3 +79,13 @@ export function parsePrice(input: string): number | null {
 }
 
 export const isEmail = (s: string) => /^\S+@\S+\.\S+$/.test(s);
+
+/** Dia de São Paulo (UTC-3) em AAAA-MM-DD, deslocado `offsetDays` dias. */
+export const spDay = (offsetDays = 0) =>
+  new Date(Date.now() - 3 * 3600_000 + offsetDays * 86400_000)
+    .toISOString()
+    .slice(0, 10);
+
+/** "2026-10-21" → "21/10" */
+export const dayMonth = (isoDay: string) =>
+  `${isoDay.slice(8, 10)}/${isoDay.slice(5, 7)}`;

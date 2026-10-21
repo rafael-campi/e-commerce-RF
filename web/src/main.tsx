@@ -24,6 +24,7 @@ import {
   NotFoundPage,
   ProfilePage,
 } from './store/MiscPages';
+import { AdminDashboardPage } from './admin/AdminDashboard';
 import { AdminProductsPage } from './admin/AdminProducts';
 import { AdminUsersPage } from './admin/AdminUsers';
 import { AdminOrdersPage } from './admin/AdminOrders';
@@ -84,8 +85,7 @@ function Protected({
 function GuestOnly({ children }: { children: ReactNode }) {
   const { user, loading, isAdmin } = useAuth();
   if (loading) return <Boot />;
-  if (user)
-    return <Navigate to={isAdmin ? '/admin/produtos' : '/produtos'} replace />;
+  if (user) return <Navigate to={isAdmin ? '/admin' : '/produtos'} replace />;
   return <>{children}</>;
 }
 
@@ -165,7 +165,11 @@ function App() {
 
             <Route
               path="/admin"
-              element={<Navigate to="/admin/produtos" replace />}
+              element={
+                <Protected admin>
+                  <AdminDashboardPage />
+                </Protected>
+              }
             />
             <Route
               path="/admin/produtos"

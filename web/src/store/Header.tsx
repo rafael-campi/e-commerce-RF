@@ -69,7 +69,7 @@ export function UserMenu({ compact }: { compact?: boolean }) {
           {isAdmin && (
             <Link
               className="menu-i"
-              to="/admin/produtos"
+              to="/admin"
               role="menuitem"
               onClick={close}
             >

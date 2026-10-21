@@ -9,13 +9,13 @@ import {
   Field,
   Logo,
   RoleBadge,
-  Skel,
   StateBlock,
   Stepper,
   ThemeButton,
 } from '../ui/components';
-import { Icon, type IconName } from '../ui/Icon';
+import { Icon } from '../ui/Icon';
 import { ToastView } from '../ui/toast';
+import { Kpi, KpiSkel } from '../ui/charts';
 
 // Página de referência visual (só em desenvolvimento): todos os componentes nos seus
 // estados e as cores lado a lado nos dois temas. Usa dados fixos, sem API.
@@ -146,108 +146,6 @@ const Spec = ({
   <div className="panel spec" style={style}>
     {label && <span className="spec-l">{label}</span>}
     {children}
-  </div>
-);
-
-function Spark({ values }: { values: number[] }) {
-  const w = 112,
-    h = 36,
-    p = 3;
-  const mx = Math.max(...values),
-    mn = Math.min(...values),
-    range = mx - mn || 1;
-  const pts = values.map((v, i) => [
-    p + (i * (w - 2 * p)) / Math.max(1, values.length - 1),
-    h - p - ((v - mn) / range) * (h - 2 * p),
-  ]);
-  const d = pts
-    .map((q, i) => `${i ? 'L' : 'M'}${q[0].toFixed(1)} ${q[1].toFixed(1)}`)
-    .join('');
-  const last = pts[pts.length - 1];
-  return (
-    <svg
-      className="spark"
-      viewBox={`0 0 ${w} ${h}`}
-      width={w}
-      height={h}
-      aria-hidden="true"
-    >
-      <path
-        d={`${d}L${last[0].toFixed(1)} ${h}L${pts[0][0]} ${h}Z`}
-        style={{ fill: 'var(--c1)', fillOpacity: 0.12 }}
-      />
-      <path
-        d={d}
-        style={{
-          fill: 'none',
-          stroke: 'var(--c1)',
-          strokeWidth: 2,
-          strokeLinejoin: 'round',
-          strokeLinecap: 'round',
-        }}
-      />
-      <circle
-        cx={last[0]}
-        cy={last[1]}
-        r={3}
-        style={{
-          fill: 'var(--c1)',
-          stroke: 'var(--bg-surface)',
-          strokeWidth: 2,
-        }}
-      />
-    </svg>
-  );
-}
-
-function Kpi({
-  icon,
-  label,
-  value,
-  delta,
-  values,
-}: {
-  icon: IconName;
-  label: string;
-  value: string;
-  delta: number;
-  values: number[];
-}) {
-  const dir = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
-  return (
-    <div className="panel kpi">
-      <div className="kpi-top">
-        <Icon name={icon} size={16} />
-        {label}
-      </div>
-      <div className="kpi-row">
-        <span className="kpi-v">{value}</span>
-        <Spark values={values} />
-      </div>
-      <div className="kpi-f">
-        <span className={`delta ${dir}`}>
-          <Icon
-            name={dir === 'down' ? 'trending-down' : 'trending-up'}
-            size={12}
-          />
-          {(delta > 0 ? '+' : '') +
-            delta.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
-          %
-        </span>
-        vs. período anterior
-      </div>
-    </div>
-  );
-}
-
-const KpiSkel = () => (
-  <div className="panel kpi">
-    <Skel w="50%" h={14} />
-    <div className="kpi-row">
-      <Skel w="60%" h={32} />
-      <Skel w="112px" h={36} />
-    </div>
-    <Skel w="70%" h={14} />
   </div>
 );
 

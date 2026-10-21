@@ -114,10 +114,9 @@ export function LoginPage() {
     try {
       const user = await login(email.trim(), password);
       const from = redirect?.from;
-      navigate(
-        from ?? (user.role === ROLE.ADMIN ? '/admin/produtos' : '/produtos'),
-        { replace: true },
-      );
+      navigate(from ?? (user.role === ROLE.ADMIN ? '/admin' : '/produtos'), {
+        replace: true,
+      });
       toast(
         'success',
         `Olá, ${user.firstName ?? user.email}!`,

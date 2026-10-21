@@ -58,3 +58,28 @@ export interface Order {
   customer: Pick<User, 'id' | 'email' | 'firstName' | 'lastName'>;
   items: { productId: number; name: string; price: string; quantity: number }[];
 }
+
+interface PeriodTotals {
+  revenue: number; // em reais
+  paidOrders: number;
+  averageTicket: number;
+  newUsers: number;
+}
+
+/** GET /admin/metrics: resumo de um período (dias de São Paulo). */
+export interface Metrics extends PeriodTotals {
+  from: string;
+  to: string;
+  granularity: 'day' | '2h';
+  openCarts: number;
+  previous: PeriodTotals;
+  byMethod: { pix: number; credit_card: number };
+  /** start: "2026-10-21" (dia) ou "2026-10-21T14:00" (faixa de 2 h) */
+  series: { start: string; revenue: number; orders: number; signups: number }[];
+  topProducts: {
+    productId: number;
+    name: string;
+    units: number;
+    revenue: number;
+  }[];
+}
