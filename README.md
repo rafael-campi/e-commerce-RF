@@ -31,7 +31,7 @@ Variáveis de ambiente (`.env`):
 | `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Conexão com o Postgres | ver `.env.example` |
 | `SECRET_KEY_JWT` | Segredo usado para assinar o JWT | — (obrigatório) |
 
-Os scripts de migration existem (`yarn migration:generate`, `yarn migration:run`), mas **ainda não há arquivos de migration versionados**; gere-os antes de usar um banco de produção. O seeder (`yarn seed`) cria um admin e um usuário comum.
+Os scripts de migration existem (`yarn migration:generate`, `yarn migration:run`), mas **ainda não há arquivos de migration versionados**; gere-os antes de usar um banco de produção. O seed (`yarn seed`) cria os dados da Loja Prateleira: `admin@prateleira.com` (ADMIN) e `cliente@prateleira.com` (USER), ambos com senha `123456`, e os 12 produtos do catálogo. Pode rodar mais de uma vez sem duplicar nada.
 
 ## Endpoints
 
