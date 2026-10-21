@@ -24,6 +24,9 @@ import {
   NotFoundPage,
   ProfilePage,
 } from './store/MiscPages';
+import { AdminProductsPage } from './admin/AdminProducts';
+import { AdminUsersPage } from './admin/AdminUsers';
+import { AdminOrdersPage } from './admin/AdminOrders';
 
 // Só existe em desenvolvimento: no build de produção a rota e o arquivo somem.
 const DesignSystem = import.meta.env.DEV
@@ -160,6 +163,34 @@ function App() {
               }
             />
 
+            <Route
+              path="/admin"
+              element={<Navigate to="/admin/produtos" replace />}
+            />
+            <Route
+              path="/admin/produtos"
+              element={
+                <Protected admin>
+                  <AdminProductsPage />
+                </Protected>
+              }
+            />
+            <Route
+              path="/admin/usuarios"
+              element={
+                <Protected admin>
+                  <AdminUsersPage />
+                </Protected>
+              }
+            />
+            <Route
+              path="/admin/pedidos"
+              element={
+                <Protected admin>
+                  <AdminOrdersPage />
+                </Protected>
+              }
+            />
 
             {DesignSystem && (
               <Route
