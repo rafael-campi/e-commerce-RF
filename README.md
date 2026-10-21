@@ -42,6 +42,7 @@ Rotas protegidas exigem o header `Authorization: Bearer <token>`.
 | Método | Rota | Acesso | Descrição |
 | --- | --- | --- | --- |
 | POST | `/auth/login` | público | Retorna `{ "access_token": "..." }`. Credenciais inválidas: `401`. |
+| GET | `/auth/me` | autenticado | Dados do usuário logado (sem senha). |
 
 ### Usuários
 

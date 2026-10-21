@@ -132,3 +132,39 @@ describe('Auth: papéis (e2e)', () => {
       .expect(403);
   });
 });
+
+describe('Auth: usuário logado (e2e)', () => {
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    app = await createTestApp();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it.each([
+    ['cliente', UserType.USER],
+    ['moderador', UserType.MODERATOR],
+    ['administrador', UserType.ADMIN],
+  ])('GET /auth/me devolve os dados do %s, sem senha', async (_, role) => {
+    const user = await createUser(app, { role });
+    const token = await loginAs(app, user.email, user.password);
+
+    const response = await request(app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(response.body).toEqual(
+      expect.objectContaining({ id: user.id, email: user.email, role }),
+    );
+    expect(JSON.stringify(response.body)).not.toContain('password');
+    expect(JSON.stringify(response.body)).not.toContain('$2');
+  });
+
+  it('GET /auth/me sem token retorna 401', async () => {
+    await request(app.getHttpServer()).get('/auth/me').expect(401);
+  });
+});
