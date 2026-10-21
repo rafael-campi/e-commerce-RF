@@ -91,6 +91,31 @@ O pagamento baixa o estoque dos itens. O carrinho pago vira um **Pedido** e some
 | --- | --- | --- | --- |
 | GET | `/orders` | ADMIN | Lista os Pedidos (carrinhos pagos), do mais recente ao mais antigo: `id`, `amount`, `paymentMethod`, `status` (`paid`), `gatewayReference`, `createdAt`, `cartId`, `customer` e `items` (`productId`, `name`, `price` atual, `quantity`). |
 
+## Front-end (`web/`)
+
+Loja Prateleira em **React + Vite + TypeScript**, feita a partir do protótipo navegável. Consome esta API pelo proxy do Vite (`/api` → `localhost:3000`), sem CORS.
+
+```bash
+docker compose up -d db
+yarn seed                      # usuários e catálogo da Prateleira (senha 123456)
+yarn start:dev                 # API em :3000
+cd web && yarn install && yarn dev   # front em http://localhost:5173
+```
+
+Contas: `cliente@prateleira.com` (cliente) e `admin@prateleira.com` (administrador), ambas com senha `123456`. Para apontar para outra API: `API_URL=http://localhost:3100 yarn dev`.
+
+| Rota | Tela |
+| --- | --- |
+| `/entrar`, `/cadastro` | Login e cadastro |
+| `/produtos`, `/produtos/:id` | Catálogo (busca `?busca=`) e detalhe |
+| `/carrinhos` | Carrinhos abertos do cliente |
+| `/carrinhos/:id/pagamento`, `/pedidos/:id` | Pagamento e confirmação do Pedido |
+| `/perfil` | Dados da conta |
+| `/admin/produtos`, `/admin/usuarios`, `/admin/pedidos` | Área do administrador |
+| `/design-system` | Componentes e cores nos dois temas (**só em `yarn dev`**, fora do build) |
+
+O layout é responsivo (desktop e celular) e o tema segue o sistema, com um botão para alternar entre sistema, claro e escuro.
+
 ## Testes
 
 A suíte é toda **end-to-end**: sobe a aplicação real e chama a API HTTP (Jest + supertest) contra um Postgres de teste isolado (porta `5434`, em memória), recriado a cada suíte. Só o gateway de pagamento é substituído por um fake.
