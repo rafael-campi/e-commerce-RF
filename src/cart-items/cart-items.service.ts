@@ -68,6 +68,16 @@ export class CartItemsService {
     return cartItems;
   }
 
+  async setQuantity(cart: CartEntity, product: ProductEntity, quantity: number) {
+    const existing = cart.cartItem.find((item) => item.product.id === product.id);
+
+    return this.cartItemRepository.save(
+      existing
+        ? Object.assign(existing, { quantity })
+        : this.cartItemRepository.create({ cart, product, quantity }),
+    );
+  }
+
   async findAll() {
     return this.cartItemRepository.find();
   }

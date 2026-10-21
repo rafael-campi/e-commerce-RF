@@ -71,8 +71,10 @@ Respostas nunca incluem a senha.
 | Método | Rota | Descrição |
 | --- | --- | --- |
 | POST | `/cart` | Cria um carrinho. Body: `{ "items": [{ "productId": 1, "quantity": 2 }] }` (ao menos 1 item, `quantity` inteiro ≥ 1). Produto inexistente: `404`. Quantidade acima do estoque: `400`. |
-| GET | `/cart` | Lista os carrinhos do usuário autenticado. |
-| DELETE | `/cart/:id` | Remove um carrinho do próprio usuário (`404` caso contrário). |
+| GET | `/cart` | Lista os carrinhos **abertos** (não pagos) do usuário autenticado, com os produtos de cada item. |
+| PUT | `/cart/:id/items/:productId` | Define a quantidade de um produto no carrinho (insere se não estiver). Body: `{ "quantity": 2 }`. Acima do estoque: `400`. Produto ou carrinho inexistente: `404`. Carrinho já pago: `409`. |
+| DELETE | `/cart/:id/items/:productId` | Remove o item; o carrinho é removido junto quando fica vazio. `404` se o item não está no carrinho, `409` se já foi pago. |
+| DELETE | `/cart/:id` | Remove um carrinho do próprio usuário (`404` caso contrário, `409` se já foi pago). |
 
 ### Pagamento
 

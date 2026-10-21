@@ -6,10 +6,12 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Put,
   Request,
   UseGuards,
 } from '@nestjs/common';
 import { CreateCartDto } from './dto/create-cart.dto';
+import { UpdateCartItemsDto } from '../cart-items/dto/update-cart-items.dto';
 import { CartService } from './cart.service';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -31,5 +33,24 @@ export class CartController {
   @Delete(':id')
   delete(@Request() req, @Param('id', ParseIntPipe) id: number) {
     return this.cartService.delete(id, req.user);
+  }
+
+  @Put(':id/items/:productId')
+  setItem(
+    @Request() req,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('productId', ParseIntPipe) productId: number,
+    @Body() body: UpdateCartItemsDto,
+  ) {
+    return this.cartService.setItem(id, productId, body.quantity, req.user);
+  }
+
+  @Delete(':id/items/:productId')
+  removeItem(
+    @Request() req,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('productId', ParseIntPipe) productId: number,
+  ) {
+    return this.cartService.removeItem(id, productId, req.user);
   }
 }

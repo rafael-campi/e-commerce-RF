@@ -1,6 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CartEntity } from './entities/cart.entity';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { CreateCartDto } from './dto/create-cart.dto';
 import { ProductEntity } from '../products/entities/product.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,6 +13,7 @@ import { UserService } from '../users/users.service';
 import { UserEntity } from 'src/users/entities/user.entity';
 import { PaymentEntity } from '../payments/entities/payment.entity';
 import { CartItemsService } from 'src/cart-items/cart-items.service';
+import { CartItemEntity } from 'src/cart-items/entities/card-items.entity';
 
 @Injectable()
 export class CartService {
@@ -27,22 +32,52 @@ export class CartService {
     );
     const cartItems = await this.cartItemService.createMany(items, savedCart);
 
-    return {
-      id: savedCart.id,
-      createdAt: savedCart.createdAt,
-      items: cartItems.map(({ id, quantity, product }) => ({
-        id,
-        quantity,
-        product,
-      })),
-    };
+    return this.toView(savedCart, cartItems);
   }
 
+  // carrinho pago virou Pedido: não aparece mais para o cliente
   async findByUser(user: UserEntity) {
     return this.cartRepository.find({
-      where: { user: { id: user.id } },
+      where: { user: { id: user.id }, payment: IsNull() },
       relations: ['cartItem'],
+      order: { id: 'ASC' },
     });
+  }
+
+  async setItem(
+    cartId: number,
+    productId: number,
+    quantity: number,
+    user: UserEntity,
+  ) {
+    const cart = await this.findOpen(cartId, user);
+    const [{ product }] = await this.cartItemService.resolveItems([
+      { productId, quantity },
+    ]);
+
+    await this.cartItemService.setQuantity(cart, product, quantity);
+
+    const updated = await this.findOpen(cartId, user);
+    return this.toView(updated, updated.cartItem);
+  }
+
+  async removeItem(cartId: number, productId: number, user: UserEntity) {
+    const cart = await this.findOpen(cartId, user);
+    const item = cart.cartItem.find((i) => i.product.id === productId);
+
+    if (!item) {
+      throw new NotFoundException(
+        `O produto ${productId} não está no carrinho ${cartId}.`,
+      );
+    }
+
+    if (cart.cartItem.length === 1) {
+      await this.cartRepository.delete(cart.id);
+    } else {
+      await this.cartItemService.delete(item.id);
+    }
+
+    return true;
   }
 
   async find(id: number) {
@@ -65,17 +100,35 @@ export class CartService {
   }
 
   async delete(id: number, user: UserEntity) {
-    const cart = await this.cartRepository.findOneBy({
-      id,
-      user: { id: user.id },
-    });
-
-    if (!cart) {
-      throw new NotFoundException(`O carrinho ${id} não existe.`);
-    }
+    await this.findOpen(id, user);
 
     await this.cartRepository.delete(id);
 
     return true;
+  }
+
+  private async findOpen(id: number, user: UserEntity) {
+    const cart = await this.findOwned(id, user);
+
+    if (!cart) {
+      throw new NotFoundException(`O carrinho ${id} não existe.`);
+    }
+    if (cart.payment) {
+      throw new ConflictException(`O carrinho ${id} já foi pago.`);
+    }
+
+    return cart;
+  }
+
+  private toView(cart: CartEntity, cartItems: CartItemEntity[]) {
+    return {
+      id: cart.id,
+      createdAt: cart.createdAt,
+      items: cartItems.map(({ id, quantity, product }) => ({
+        id,
+        quantity,
+        product,
+      })),
+    };
   }
 }
