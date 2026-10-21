@@ -74,7 +74,7 @@ describe('Payments (e2e)', () => {
     expect(response.body).toMatchObject({
       amount: '45.50',
       payment_method: 'pix',
-      payment_status: 'progress',
+      payment_status: 'paid',
       cartId: cart.id,
       userId: user.id,
     });

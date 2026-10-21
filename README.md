@@ -82,8 +82,14 @@ Respostas nunca incluem a senha.
 | --- | --- | --- |
 | POST | `/payment` | Paga um carrinho. Body: `{ "paymentMethod": "pix" \| "credit_card", "cartId": 1 }`. |
 
-Resposta (`201`): `id`, `amount`, `payment_method`, `payment_status` (`progress`), `gatewayReference`, `cartId`, `userId`, `createdAt`.
-O pagamento baixa o estoque dos itens. Erros: `400` método ou `cartId` inválido, `404` carrinho inexistente ou de outro usuário, `409` carrinho já pago ou estoque insuficiente, `502` falha do gateway (o estoque é devolvido).
+Resposta (`201`): `id`, `amount`, `payment_method`, `payment_status` (`paid`), `gatewayReference`, `cartId`, `userId`, `createdAt`.
+O pagamento baixa o estoque dos itens. O carrinho pago vira um **Pedido** e some de `GET /cart`. Erros: `400` método ou `cartId` inválido, `404` carrinho inexistente ou de outro usuário, `409` carrinho já pago ou estoque insuficiente, `502` falha do gateway (o estoque é devolvido).
+
+### Pedidos
+
+| Método | Rota | Acesso | Descrição |
+| --- | --- | --- | --- |
+| GET | `/orders` | ADMIN | Lista os Pedidos (carrinhos pagos), do mais recente ao mais antigo: `id`, `amount`, `paymentMethod`, `status` (`paid`), `gatewayReference`, `createdAt`, `cartId`, `customer` e `items` (`productId`, `name`, `price` atual, `quantity`). |
 
 ## Testes
 

@@ -67,7 +67,7 @@ export class PaymentsService {
       this.paymentRepository.create({
         amount,
         payment_method: paymentMethod,
-        payment_status: PaymentStatus.PROGRESS,
+        payment_status: PaymentStatus.PAID,
         gatewayReference: reference,
         user,
       }),
@@ -84,5 +84,38 @@ export class PaymentsService {
       userId: user.id,
       createdAt: payment.createdAt,
     };
+  }
+
+  // Pedido = carrinho pago (ver CONTEXT.md)
+  async findOrders() {
+    const payments = await this.paymentRepository.find({
+      relations: ['user', 'carts', 'carts.cartItem'],
+      order: { createdAt: 'DESC', id: 'DESC' },
+    });
+
+    return payments.map((payment) => {
+      const [cart] = payment.carts;
+      return {
+        id: payment.id,
+        amount: payment.amount,
+        paymentMethod: payment.payment_method,
+        status: payment.payment_status,
+        gatewayReference: payment.gatewayReference,
+        createdAt: payment.createdAt,
+        cartId: cart?.id ?? null,
+        customer: {
+          id: payment.user.id,
+          email: payment.user.email,
+          firstName: payment.user.firstName,
+          lastName: payment.user.lastName,
+        },
+        items: (cart?.cartItem ?? []).map(({ product, quantity }) => ({
+          productId: product.id,
+          name: product.name,
+          price: product.price,
+          quantity,
+        })),
+      };
+    });
   }
 }

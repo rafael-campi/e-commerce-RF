@@ -44,7 +44,7 @@ O ato de pagar um Carrinho; quando dá certo, resulta em um Pedido, e quando fal
 _Avoid_: usar "pagamento" para o registro resultante (isso é o Pedido)
 
 **Pedido**:
-O registro de um Carrinho pago com sucesso: valor, método, referência do gateway, data e os itens congelados. Todo Pedido está Pago.
+O registro de um Carrinho pago com sucesso: valor cobrado, método, referência do gateway, data e os itens do Carrinho. Todo Pedido está Pago.
 _Avoid_: compra, venda, transação, ordem
 
 **Método de pagamento**:
