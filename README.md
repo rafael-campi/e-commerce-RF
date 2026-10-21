@@ -116,6 +116,12 @@ Contas: `cliente@prateleira.com` (cliente) e `admin@prateleira.com` (administrad
 
 O layout é responsivo (desktop e celular) e o tema segue o sistema, com um botão para alternar entre sistema, claro e escuro.
 
+### Métricas (dashboard)
+
+| Método | Rota | Acesso | Descrição |
+| --- | --- | --- | --- |
+| GET | `/admin/metrics?from=AAAA-MM-DD&to=AAAA-MM-DD` | ADMIN | Resumo do período (dias de São Paulo, até 60): `revenue`, `paidOrders`, `averageTicket`, `newUsers`, `openCarts` (estado atual), `previous` (mesmos números no período anterior de igual tamanho), `byMethod`, `series` (por dia, ou em faixas de 2 h quando `from = to`) e `topProducts` (5 mais vendidos por receita). Valores em reais, como número. Datas inválidas, início depois do fim ou período maior que 60 dias: `400`. |
+
 ## Testes
 
 A suíte é toda **end-to-end**: sobe a aplicação real e chama a API HTTP (Jest + supertest) contra um Postgres de teste isolado (porta `5434`, em memória), recriado a cada suíte. Só o gateway de pagamento é substituído por um fake.
