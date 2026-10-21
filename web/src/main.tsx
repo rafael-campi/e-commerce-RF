@@ -16,6 +16,8 @@ import { useDevice } from './lib/device';
 import { ToastProvider } from './ui/toast';
 import { LoginPage, SignupPage } from './store/AuthPages';
 import { ProductDetailPage, ProductsPage } from './store/ProductPages';
+import { CartsPage } from './store/CartsPage';
+import { ConfirmationPage, PaymentPage } from './store/CheckoutPages';
 import {
   ErrorBoundary,
   ForbiddenPage,
@@ -122,6 +124,30 @@ function App() {
               element={
                 <Protected>
                   <ProductDetailPage />
+                </Protected>
+              }
+            />
+            <Route
+              path="/carrinhos"
+              element={
+                <Protected>
+                  <CartsPage />
+                </Protected>
+              }
+            />
+            <Route
+              path="/carrinhos/:id/pagamento"
+              element={
+                <Protected>
+                  <PaymentPage />
+                </Protected>
+              }
+            />
+            <Route
+              path="/pedidos/:id"
+              element={
+                <Protected>
+                  <ConfirmationPage />
                 </Protected>
               }
             />
