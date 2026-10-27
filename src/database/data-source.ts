@@ -8,6 +8,8 @@ import { ProductEntity } from '../products/entities/product.entity'
 import { CartEntity } from '../cart/entities/cart.entity'
 import { CartItemEntity } from '../cart-items/entities/card-items.entity'
 import { PaymentEntity } from '../payments/entities/payment.entity'
+import { PaymentAttemptEntity } from '../payments/entities/payment-attempt.entity'
+import { ProcessedWebhookEventEntity } from '../payments/entities/processed-webhook-event.entity'
 
 dotenv.config()
 
@@ -30,7 +32,9 @@ export const AppDataSource = new DataSource({
         ProductEntity,
         CartEntity,
         CartItemEntity,
-        PaymentEntity
+        PaymentEntity,
+        PaymentAttemptEntity,
+        ProcessedWebhookEventEntity
     ],
     migrations: [join(__dirname, '..', 'migrations', '*.{ts,js}')],
     subscribers: []

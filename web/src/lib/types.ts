@@ -46,14 +46,77 @@ export interface PaymentResult {
   createdAt: string;
 }
 
-/** Pedido = carrinho pago, como em GET /orders. */
+export type PaymentAttemptStatus =
+  | 'pending'
+  | 'succeeded'
+  | 'failed'
+  | 'expired'
+  | 'canceled';
+
+/**
+ * Tentativa de pagamento, como em POST /payment e GET /payment/attempts/:id.
+ * Pix fica "pending" até o cliente pagar; aí vira Pedido (`order`).
+ */
+export interface PaymentAttempt {
+  id: number;
+  cartId: number;
+  status: PaymentAttemptStatus;
+  method: PaymentMethod;
+  amount: string;
+  expiresAt: string | null;
+  pix: { copiaECola: string } | null;
+  card: { brand: string; last4: string } | null;
+  failure: { code: string; message: string } | null;
+  order: PaymentResult | null;
+}
+
+export interface Payout {
+  id: string;
+  amount: number; // em reais
+  pixKey: string;
+  status: 'pending' | 'paid' | 'failed';
+  failureCode: string | null;
+  createdAt: string;
+}
+
+/** GET /admin/finance: o dinheiro da loja no PSP (valores em reais). */
+export type Finance =
+  | { configured: false }
+  | {
+      configured: true;
+      payoutPixKey: string | null;
+      available: number;
+      pending: number;
+      receivables: {
+        paymentId: string;
+        installment: number;
+        amount: number;
+        availableOn: string;
+      }[];
+      payouts: Payout[];
+    };
+
+/** GET /payment/config: com PSP, o cartão é tokenizado no navegador. */
+export interface CheckoutConfig {
+  card: { publishableKey: string; pspUrl: string } | null;
+}
+
+/** Token de cartão do PSP (POST /v1/tokens): nunca traz o número. */
+export interface CardToken {
+  id: string;
+  card: { brand: string; last4: string; expMonth: number; expYear: number };
+}
+
+/** Pedido = carrinho pago, como em GET /orders. Pode depois ser estornado. */
 export interface Order {
   id: number;
   amount: string;
   paymentMethod: PaymentMethod;
-  status: 'paid';
+  // refund_pending: estorno pedido ao gateway, aguardando a resposta
+  status: 'paid' | 'refund_pending' | 'refunded';
   gatewayReference: string;
   createdAt: string;
+  refundedAt: string | null;
   cartId: number | null;
   customer: Pick<User, 'id' | 'email' | 'firstName' | 'lastName'>;
   items: { productId: number; name: string; price: string; quantity: number }[];

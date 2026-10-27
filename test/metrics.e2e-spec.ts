@@ -2,6 +2,7 @@ import * as request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { createTestApp } from './helpers/app';
+import { approvingGateway } from './helpers/gateway';
 import { createUser, loginAs } from './helpers/users';
 import { UserType } from '../src/enums/user-types.enum';
 import { PaymentEntity } from '../src/payments/entities/payment.entity';
@@ -39,12 +40,12 @@ describe('Admin metrics (e2e)', () => {
         .set(bearer(customerToken))
         .send({ paymentMethod, cartId: cart.id })
         .expect(201)
-    ).body;
+    ).body.order; // aprovado na hora: a Tentativa já virou Pedido
   };
 
   beforeAll(async () => {
     app = await createTestApp({
-      paymentGateway: { charge: async () => ({ reference: 'PAG-TESTE' }) },
+      paymentGateway: approvingGateway(),
     });
     const admin = await createUser(app, { role: UserType.ADMIN });
     adminToken = await loginAs(app, admin.email, admin.password);

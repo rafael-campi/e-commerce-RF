@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+test-results
+.docker/dbdata
+.docker/dbdatatest
+web
+.env
+.env.*
+!.env.example

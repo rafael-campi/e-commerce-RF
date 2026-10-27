@@ -13,6 +13,8 @@ export const testEnv = {
   DB_PASSWORD: 'docker',
   DB_NAME: 'ecommerce_test',
   SECRET_KEY_JWT: 'playwright',
+  // gateway local (aprova na hora), mesmo que o .env de dev aponte para o PSP
+  PSP_URL: '',
 };
 
 export default defineConfig({

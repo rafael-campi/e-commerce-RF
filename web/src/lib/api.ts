@@ -1,9 +1,13 @@
 import type {
   Cart,
+  CardToken,
+  CheckoutConfig,
+  Finance,
   Metrics,
   Order,
+  PaymentAttempt,
   PaymentMethod,
-  PaymentResult,
+  Payout,
   Product,
   RoleId,
   User,
@@ -48,8 +52,9 @@ async function request<T>(
   method: string,
   path: string,
   body?: unknown,
+  extraHeaders: Record<string, string> = {},
 ): Promise<T> {
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { ...extraHeaders };
   const current = token.get();
   if (current) headers.Authorization = `Bearer ${current}`;
   if (body !== undefined) headers['Content-Type'] = 'application/json';
@@ -78,6 +83,98 @@ async function request<T>(
   }
 
   return data as T;
+}
+
+/**
+ * Só em dev: faz o papel do banco do cliente e paga um Pix no simulador do
+ * PSP (proxy /psp-simulator no vite.config.ts). O txid vem do copia e cola.
+ */
+export async function simulatePixPayment(copiaECola: string) {
+  // campo EMV 26 → subcampo 25 (location): "25" + tamanho com 2 dígitos + URL;
+  // o txid é o fim da URL (os campos vêm colados, então lê pelo tamanho)
+  const at = copiaECola.indexOf('br.gov.bcb.pix25');
+  const length = Number(copiaECola.slice(at + 16, at + 18));
+  const location = copiaECola.slice(at + 18, at + 18 + length);
+  const txid = location.match(/\/qr\/v2\/([A-Za-z0-9]+)$/)?.[1];
+  if (at < 0 || !txid)
+    throw new ApiError(0, 'Este copia e cola não é do simulador.');
+  const response = await fetch(`/psp/simulator/pix/${txid}/pay`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    throw new ApiError(response.status, data?.message ?? response.statusText);
+  }
+}
+
+// recusas do cofre do PSP, no campo em que o cliente pode corrigir
+const CARD_ERRORS: Record<string, { field: CardField; message: string }> = {
+  'vault.invalid_number': {
+    field: 'number',
+    message: 'Número do cartão inválido.',
+  },
+  'vault.unsupported_brand': {
+    field: 'number',
+    message: 'Aceitamos Visa, Mastercard, Elo, Hipercard e American Express.',
+  },
+  'vault.expired_card': {
+    field: 'expiry',
+    message: 'Este cartão está vencido.',
+  },
+  'vault.invalid_expiry': { field: 'expiry', message: 'Validade inválida.' },
+  'vault.invalid_cvc': {
+    field: 'cvc',
+    message: 'Código de segurança inválido.',
+  },
+};
+
+export type CardField = 'number' | 'expiry' | 'cvc' | 'name';
+
+/** Recusa do cartão antes de cobrar: aponta o campo a corrigir. */
+export class CardError extends Error {
+  constructor(
+    readonly field: CardField | null,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+/**
+ * Manda o cartão do navegador direto ao PSP, com a chave publicável, e
+ * devolve só o token: o número nunca passa pela API da loja (docs/adr/0001).
+ */
+export async function tokenizeCard(
+  config: NonNullable<CheckoutConfig['card']>,
+  card: {
+    number: string;
+    expMonth: number;
+    expYear: number;
+    cvc: string;
+    holderName: string;
+  },
+): Promise<CardToken> {
+  let response: Response;
+  try {
+    response = await fetch(`${config.pspUrl}/v1/tokens`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.publishableKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ card }),
+    });
+  } catch {
+    throw new CardError(null, 'Não foi possível falar com a operadora.');
+  }
+  const data = await response.json().catch(() => null);
+  if (!response.ok) {
+    const known = CARD_ERRORS[data?.error];
+    throw known
+      ? new CardError(known.field, known.message)
+      : new CardError(null, 'Confira os dados do cartão e tente de novo.');
+  }
+  return data as CardToken;
 }
 
 export const api = {
@@ -117,9 +214,38 @@ export const api = {
     request<boolean>('DELETE', `/cart/${cartId}/items/${productId}`),
   deleteCart: (cartId: number) => request<boolean>('DELETE', `/cart/${cartId}`),
 
-  pay: (cartId: number, paymentMethod: PaymentMethod) =>
-    request<PaymentResult>('POST', '/payment', { cartId, paymentMethod }),
+  checkoutConfig: () => request<CheckoutConfig>('GET', '/payment/config'),
+  pay: (
+    cartId: number,
+    paymentMethod: PaymentMethod,
+    card?: { token: string; installments: number },
+  ) =>
+    request<PaymentAttempt>('POST', '/payment', {
+      cartId,
+      paymentMethod,
+      ...(card
+        ? { cardToken: card.token, installments: card.installments }
+        : {}),
+    }),
+  paymentAttempt: (id: number) =>
+    request<PaymentAttempt>('GET', `/payment/attempts/${id}`),
+  cancelPaymentAttempt: (id: number) =>
+    request<PaymentAttempt>('POST', `/payment/attempts/${id}/cancel`),
   orders: () => request<Order[]>('GET', '/orders'),
+  refundOrder: (id: number) => request<Order>('POST', `/orders/${id}/refund`),
+  finance: () => request<Finance>('GET', '/admin/finance'),
+  // a chave vem de quem clicou: repetir o pedido não repassa duas vezes
+  requestPayout: (amount: number | undefined, idempotencyKey: string) =>
+    request<Payout>(
+      'POST',
+      '/admin/finance/payouts',
+      amount === undefined ? {} : { amount },
+      { 'Idempotency-Key': idempotencyKey },
+    ),
+  setPayoutKey: (pixKey: string) =>
+    request<{ payoutPixKey: string }>('PUT', '/admin/finance/payout-key', {
+      pixKey,
+    }),
   metrics: (from: string, to: string) =>
     request<Metrics>('GET', `/admin/metrics?from=${from}&to=${to}`),
 

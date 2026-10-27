@@ -29,6 +29,16 @@ export class PaymentEntity {
   @Column({ type: 'varchar', nullable: true })
   gatewayReference: string | null;
 
+  // estorno: quando foi pedido, quando foi confirmado e a referência no gateway
+  @Column({ type: 'timestamp', nullable: true })
+  refundRequestedAt: Date | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  refundedAt: Date | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  refundReference: string | null;
+
   @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
   user: UserEntity;
 
