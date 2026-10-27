@@ -19,6 +19,7 @@ import { CartItemEntity } from './cart-items/entities/card-items.entity';
 import { PaymentEntity } from './payments/entities/payment.entity';
 import { DataSource } from 'typeorm';
 import { AuthModule } from './auth/auth.module';
+import { MetricsModule } from './metrics/metrics.module';
 import { AppDataSource } from './database/data-source';
 import { APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
@@ -47,6 +48,7 @@ import { UserTypesGuard } from './guards/auth.guard';
     PaymentsModule,
     CartItemsModule,
     AuthModule,
+    MetricsModule,
   ],
   controllers: [AppController],
   providers: [

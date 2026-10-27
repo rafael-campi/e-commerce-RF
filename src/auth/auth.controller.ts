@@ -1,4 +1,13 @@
-import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Request,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { AuthLoginDTO } from './dto/auth-login.dto';
 
@@ -16,5 +25,11 @@ export class AuthController {
       throw new UnauthorizedException('Credenciais inválidas');
     }
     return this.authService.login(user); // Retorna o JWT após o login
+  }
+
+  @Get('me')
+  @UseGuards(AuthGuard('jwt'))
+  me(@Request() req) {
+    return req.user;
   }
 }

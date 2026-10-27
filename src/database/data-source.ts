@@ -2,6 +2,7 @@ import 'reflect-metadata'
 import { DataSource } from 'typeorm'
 import { join } from 'path'
 import * as dotenv from 'dotenv'
+import * as pg from 'pg'
 import { UserEntity } from '../users/entities/user.entity'
 import { ProductEntity } from '../products/entities/product.entity'
 import { CartEntity } from '../cart/entities/cart.entity'
@@ -9,6 +10,11 @@ import { CartItemEntity } from '../cart-items/entities/card-items.entity'
 import { PaymentEntity } from '../payments/entities/payment.entity'
 
 dotenv.config()
+
+// As colunas são `timestamp` (sem fuso) e o Postgres preenche com now() em UTC.
+// Sem isto, o driver lê e grava no fuso do Node: em São Paulo, tudo saía 3 h adiantado.
+pg.types.setTypeParser(pg.types.builtins.TIMESTAMP, (value: string) => new Date(`${value.replace(' ', 'T')}Z`))
+pg.defaults.parseInputDatesAsUTC = true
 
 export const AppDataSource = new DataSource({
     type: 'postgres',

@@ -31,7 +31,7 @@ Variáveis de ambiente (`.env`):
 | `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Conexão com o Postgres | ver `.env.example` |
 | `SECRET_KEY_JWT` | Segredo usado para assinar o JWT | — (obrigatório) |
 
-Os scripts de migration existem (`yarn migration:generate`, `yarn migration:run`), mas **ainda não há arquivos de migration versionados**; gere-os antes de usar um banco de produção. O seeder (`yarn seed`) cria um admin e um usuário comum.
+Os scripts de migration existem (`yarn migration:generate`, `yarn migration:run`), mas **ainda não há arquivos de migration versionados**; gere-os antes de usar um banco de produção. O seed (`yarn seed`; `yarn seed --reset` apaga o banco e recria o schema antes; `yarn seed --demo` acrescenta clientes e ~120 Pedidos de exemplo dos últimos 30 dias, com referência `DEMO-…` e sem mexer no estoque, para o dashboard ter dados) cria os dados da Loja Prateleira: `admin@prateleira.com` (ADMIN) e `cliente@prateleira.com` (USER), ambos com senha `123456`, e os 12 produtos do catálogo. Pode rodar mais de uma vez sem duplicar nada.
 
 ## Endpoints
 
@@ -42,6 +42,7 @@ Rotas protegidas exigem o header `Authorization: Bearer <token>`.
 | Método | Rota | Acesso | Descrição |
 | --- | --- | --- | --- |
 | POST | `/auth/login` | público | Retorna `{ "access_token": "..." }`. Credenciais inválidas: `401`. |
+| GET | `/auth/me` | autenticado | Dados do usuário logado (sem senha). |
 
 ### Usuários
 
@@ -70,8 +71,10 @@ Respostas nunca incluem a senha.
 | Método | Rota | Descrição |
 | --- | --- | --- |
 | POST | `/cart` | Cria um carrinho. Body: `{ "items": [{ "productId": 1, "quantity": 2 }] }` (ao menos 1 item, `quantity` inteiro ≥ 1). Produto inexistente: `404`. Quantidade acima do estoque: `400`. |
-| GET | `/cart` | Lista os carrinhos do usuário autenticado. |
-| DELETE | `/cart/:id` | Remove um carrinho do próprio usuário (`404` caso contrário). |
+| GET | `/cart` | Lista os carrinhos **abertos** (não pagos) do usuário autenticado, com os produtos de cada item. |
+| PUT | `/cart/:id/items/:productId` | Define a quantidade de um produto no carrinho (insere se não estiver). Body: `{ "quantity": 2 }`. Acima do estoque: `400`. Produto ou carrinho inexistente: `404`. Carrinho já pago: `409`. |
+| DELETE | `/cart/:id/items/:productId` | Remove o item; o carrinho é removido junto quando fica vazio. `404` se o item não está no carrinho, `409` se já foi pago. |
+| DELETE | `/cart/:id` | Remove um carrinho do próprio usuário (`404` caso contrário, `409` se já foi pago). |
 
 ### Pagamento
 
@@ -79,8 +82,46 @@ Respostas nunca incluem a senha.
 | --- | --- | --- |
 | POST | `/payment` | Paga um carrinho. Body: `{ "paymentMethod": "pix" \| "credit_card", "cartId": 1 }`. |
 
-Resposta (`201`): `id`, `amount`, `payment_method`, `payment_status` (`progress`), `gatewayReference`, `cartId`, `userId`, `createdAt`.
-O pagamento baixa o estoque dos itens. Erros: `400` método ou `cartId` inválido, `404` carrinho inexistente ou de outro usuário, `409` carrinho já pago ou estoque insuficiente, `502` falha do gateway (o estoque é devolvido).
+Resposta (`201`): `id`, `amount`, `payment_method`, `payment_status` (`paid`), `gatewayReference`, `cartId`, `userId`, `createdAt`.
+O pagamento baixa o estoque dos itens. O carrinho pago vira um **Pedido** e some de `GET /cart`. Erros: `400` método ou `cartId` inválido, `404` carrinho inexistente ou de outro usuário, `409` carrinho já pago ou estoque insuficiente, `502` falha do gateway (o estoque é devolvido).
+
+### Pedidos
+
+| Método | Rota | Acesso | Descrição |
+| --- | --- | --- | --- |
+| GET | `/orders` | ADMIN | Lista os Pedidos (carrinhos pagos), do mais recente ao mais antigo: `id`, `amount`, `paymentMethod`, `status` (`paid`), `gatewayReference`, `createdAt`, `cartId`, `customer` e `items` (`productId`, `name`, `price` atual, `quantity`). |
+
+## Front-end (`web/`)
+
+Loja Prateleira em **React + Vite + TypeScript**, feita a partir do protótipo navegável. Consome esta API pelo proxy do Vite (`/api` → `localhost:3000`), sem CORS.
+
+```bash
+docker compose up -d db
+yarn seed                      # usuários e catálogo da Prateleira (senha 123456)
+yarn start:dev                 # API em :3000
+cd web && yarn install && yarn dev   # front em http://localhost:5173
+```
+
+Contas: `cliente@prateleira.com` (cliente) e `admin@prateleira.com` (administrador), ambas com senha `123456`. Para apontar para outra API: `API_URL=http://localhost:3100 yarn dev`.
+
+| Rota | Tela |
+| --- | --- |
+| `/entrar`, `/cadastro` | Login e cadastro |
+| `/produtos`, `/produtos/:id` | Catálogo (busca `?busca=`) e detalhe |
+| `/carrinhos` | Carrinhos abertos do cliente |
+| `/carrinhos/:id/pagamento`, `/pedidos/:id` | Pagamento e confirmação do Pedido |
+| `/perfil` | Dados da conta |
+| `/admin` | Dashboard: KPIs, gráficos e tabelas do período (hoje, 7 ou 30 dias, ou personalizado até 60), com exportação em CSV |
+| `/admin/produtos`, `/admin/usuarios`, `/admin/pedidos` | Área do administrador |
+| `/design-system` | Componentes e cores nos dois temas (**só em `yarn dev`**, fora do build) |
+
+O layout é responsivo (desktop e celular) e o tema segue o sistema, com um botão para alternar entre sistema, claro e escuro.
+
+### Métricas (dashboard)
+
+| Método | Rota | Acesso | Descrição |
+| --- | --- | --- | --- |
+| GET | `/admin/metrics?from=AAAA-MM-DD&to=AAAA-MM-DD` | ADMIN | Resumo do período (dias de São Paulo, até 60): `revenue`, `paidOrders`, `averageTicket`, `newUsers`, `openCarts` (estado atual), `previous` (mesmos números no período anterior de igual tamanho), `byMethod`, `series` (por dia, ou em faixas de 2 h quando `from = to`) e `topProducts` (5 mais vendidos por receita). Valores em reais, como número. Datas inválidas, início depois do fim ou período maior que 60 dias: `400`. |
 
 ## Testes
 
@@ -91,7 +132,17 @@ docker compose up -d dbtest
 yarn test:e2e
 ```
 
-O CI (GitHub Actions) roda o typecheck e os testes a cada push.
+O front tem testes **Playwright** (`web/e2e/`) que sobem a API (porta 3100) e o Vite (porta 5180) e usam o navegador de verdade: compra completa até o pedido aparecer no dashboard e no admin, filtro de período do dashboard, admin criando produto, login inválido, seletor de quantidade limitado ao estoque, erro 400 no carrinho e os dois 409 do admin. Antes da suíte, o banco de teste é recriado com `yarn seed --reset`.
+
+```bash
+docker compose up -d dbtest
+cd web && npx playwright install chromium   # só na primeira vez
+yarn test:e2e
+```
+
+As duas suítes usam o mesmo banco de teste: rode uma de cada vez.
+
+O CI (GitHub Actions) roda o typecheck e os testes da API e, num job separado, o build e os testes Playwright do front a cada push.
 
 ## Desenvolvimento orientado a testes
 

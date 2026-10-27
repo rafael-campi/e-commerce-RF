@@ -226,4 +226,182 @@ describe('Cart (e2e)', () => {
       await http().delete('/cart/99999').set(bearer(token)).expect(404);
     });
   });
+
+  describe('itens', () => {
+    const putItem = (token: string, cartId: number, productId: number, body: object) =>
+      http()
+        .put(`/cart/${cartId}/items/${productId}`)
+        .set(bearer(token))
+        .send(body);
+
+    const deleteItem = (token: string, cartId: number, productId: number) =>
+      http().delete(`/cart/${cartId}/items/${productId}`).set(bearer(token));
+
+    const newCart = async (token: string, quantity = 1) =>
+      (
+        await createCart(token, [{ productId: produtoA.id, quantity }]).expect(
+          201,
+        )
+      ).body;
+
+    const pay = (token: string, cartId: number) =>
+      http()
+        .post('/payment')
+        .set(bearer(token))
+        .send({ paymentMethod: 'pix', cartId })
+        .expect(201);
+
+    const createLimited = async (stock: number) =>
+      (
+        await http()
+          .post('/products')
+          .set(bearer(adminToken))
+          .send({
+            name: `Item limitado ${stock}-${Math.random()}`,
+            description: 'desc',
+            price: 5,
+            stock,
+          })
+          .expect(201)
+      ).body;
+
+    it('exige autenticação', async () => {
+      await http().put('/cart/1/items/1').send({ quantity: 1 }).expect(401);
+      await http().delete('/cart/1/items/1').expect(401);
+    });
+
+    it('altera a quantidade de um item existente', async () => {
+      const { token } = await newCustomer();
+      const cart = await newCart(token);
+
+      await putItem(token, cart.id, produtoA.id, { quantity: 4 }).expect(200);
+
+      const [listed] = await listCarts(token);
+      expect(listed.cartItem).toHaveLength(1);
+      expect(listed.cartItem[0]).toMatchObject({
+        quantity: 4,
+        product: { id: produtoA.id },
+      });
+    });
+
+    it('adiciona um produto novo a um carrinho existente', async () => {
+      const { token } = await newCustomer();
+      const cart = await newCart(token);
+
+      const response = await putItem(token, cart.id, produtoB.id, {
+        quantity: 2,
+      }).expect(200);
+
+      expect(response.body.id).toBe(cart.id);
+      expect(response.body.items).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            quantity: 1,
+            product: expect.objectContaining({ id: produtoA.id }),
+          }),
+          expect.objectContaining({
+            quantity: 2,
+            product: expect.objectContaining({ id: produtoB.id }),
+          }),
+        ]),
+      );
+    });
+
+    it('rejeita quantidade acima do estoque sem alterar o item', async () => {
+      const { token } = await newCustomer();
+      const product = await createLimited(3);
+      const cart = (
+        await createCart(token, [
+          { productId: product.id, quantity: 2 },
+        ]).expect(201)
+      ).body;
+
+      await putItem(token, cart.id, product.id, { quantity: 4 }).expect(400);
+
+      const [listed] = await listCarts(token);
+      expect(listed.cartItem[0].quantity).toBe(2);
+    });
+
+    it.each([
+      ['zero', { quantity: 0 }],
+      ['fracionada', { quantity: 1.5 }],
+      ['ausente', {}],
+    ])('rejeita quantidade %s', async (_nome, body) => {
+      const { token } = await newCustomer();
+      const cart = await newCart(token);
+
+      await putItem(token, cart.id, produtoA.id, body).expect(400);
+    });
+
+    it('retorna 404 para produto inexistente', async () => {
+      const { token } = await newCustomer();
+      const cart = await newCart(token);
+
+      await putItem(token, cart.id, 99999, { quantity: 1 }).expect(404);
+    });
+
+    it('retorna 404 para carrinho de outro usuário', async () => {
+      const dono = await newCustomer();
+      const intruso = await newCustomer();
+      const cart = await newCart(dono.token);
+
+      await putItem(intruso.token, cart.id, produtoA.id, {
+        quantity: 2,
+      }).expect(404);
+      await deleteItem(intruso.token, cart.id, produtoA.id).expect(404);
+    });
+
+    it('retorna 409 ao mexer em carrinho já pago', async () => {
+      const { token } = await newCustomer();
+      const cart = await newCart(token);
+      await pay(token, cart.id);
+
+      await putItem(token, cart.id, produtoA.id, { quantity: 2 }).expect(409);
+      await deleteItem(token, cart.id, produtoA.id).expect(409);
+      await http().delete(`/cart/${cart.id}`).set(bearer(token)).expect(409);
+    });
+
+    it('remove um item e mantém o carrinho com os demais', async () => {
+      const { token } = await newCustomer();
+      const cart = (
+        await createCart(token, [
+          { productId: produtoA.id, quantity: 1 },
+          { productId: produtoB.id, quantity: 1 },
+        ]).expect(201)
+      ).body;
+
+      await deleteItem(token, cart.id, produtoA.id).expect(200);
+
+      const [listed] = await listCarts(token);
+      expect(listed.cartItem).toHaveLength(1);
+      expect(listed.cartItem[0].product.id).toBe(produtoB.id);
+    });
+
+    it('remove o carrinho quando o último item sai', async () => {
+      const { token } = await newCustomer();
+      const cart = await newCart(token);
+
+      await deleteItem(token, cart.id, produtoA.id).expect(200);
+
+      expect(await listCarts(token)).toEqual([]);
+    });
+
+    it('retorna 404 ao remover item que não está no carrinho', async () => {
+      const { token } = await newCustomer();
+      const cart = await newCart(token);
+
+      await deleteItem(token, cart.id, produtoB.id).expect(404);
+    });
+
+    it('carrinho pago some da listagem', async () => {
+      const { token } = await newCustomer();
+      const pago = await newCart(token);
+      const aberto = await newCart(token);
+      await pay(token, pago.id);
+
+      const carrinhos = await listCarts(token);
+
+      expect(carrinhos.map((c) => c.id)).toEqual([aberto.id]);
+    });
+  });
 });
